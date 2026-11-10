@@ -1,0 +1,54 @@
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+credentials.json
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Node / React / Vite
+node_modules/
+frontend/dist/
+frontend/.vite/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# User uploads and generated AI images
+backend/uploads/
+backend/generated/
+backend/catalog-images/custom/
+
+# Local database backups
+*.sql.gz
+*.dump
+*.backup
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

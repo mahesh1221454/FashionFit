@@ -1,0 +1,300 @@
+
+/* =========================================
+   PREMIUM DESIGN CARD MANAGEMENT
+   ========================================= */
+
+.design-card-managed {
+  position: relative;
+  overflow: visible;
+  isolation: isolate;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.design-card-managed:hover {
+  transform: translateY(-3px);
+}
+
+.design-card-managed.design-card-menu-open {
+  z-index: 30;
+}
+
+/* Main clickable dress surface */
+
+.design-card-managed .design-card-main {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.design-card-managed .design-card-main:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 3px;
+}
+
+.design-card-managed .design-image-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.design-card-managed .design-image {
+  transition: transform 0.4s ease;
+}
+
+.design-card-managed:hover .design-image {
+  transform: scale(1.035);
+}
+
+/* Image hover label */
+
+.design-image-overlay {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translate(-50%, 8px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #27272a;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.12);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.design-card-managed:hover .design-image-overlay,
+.design-card-main:focus-visible .design-image-overlay {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Three-dot management button */
+
+.design-actions-wrapper {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+}
+
+.design-more-button {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(228, 228, 231, 0.9);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #3f3f46;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.09);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.design-more-button:hover,
+.design-more-button.active {
+  color: #ea580c;
+  background: #fff7ed;
+  transform: translateY(-1px);
+}
+
+.design-more-button:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 3px;
+}
+
+/* Dropdown */
+
+.design-actions-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  width: min(280px, calc(100vw - 32px));
+  padding: 7px;
+  border: 1px solid #e9e9ed;
+  border-radius: 15px;
+  background: #fff;
+  color: #18181b;
+  box-shadow:
+    0 16px 50px rgba(24, 24, 27, 0.13),
+    0 3px 12px rgba(24, 24, 27, 0.05);
+  animation: design-menu-enter 0.18s ease both;
+}
+
+.design-actions-heading {
+  padding: 11px 11px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.design-actions-heading > span {
+  color: #f97316;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.25px;
+}
+
+.design-actions-heading > strong {
+  color: #27272a;
+  font-size: 13px;
+  font-weight: 650;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.design-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 48px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #3f3f46;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.design-menu-item:not(:disabled):hover {
+  background: #fff7ed;
+}
+
+.design-menu-item:focus-visible {
+  outline: 2px solid #f97316;
+}
+
+.design-menu-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.design-menu-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: #f4f4f5;
+  color: #52525b;
+}
+
+.design-menu-item:not(:disabled):hover
+.design-menu-icon {
+  color: #ea580c;
+  background: #ffedd5;
+}
+
+.design-menu-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.design-menu-copy strong {
+  color: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.design-menu-copy small {
+  color: #a1a1aa;
+  font-size: 10.5px;
+}
+
+.design-menu-divider {
+  height: 1px;
+  margin: 6px 9px;
+  background: #eeeeef;
+}
+
+.design-menu-danger {
+  color: #dc2626;
+}
+
+.design-menu-danger .design-menu-icon {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.design-menu-soon {
+  flex-shrink: 0;
+  padding: 4px 6px;
+  border-radius: 5px;
+  background: #f4f4f5;
+  color: #71717a;
+  font-size: 9px;
+  font-weight: 650;
+}
+
+@keyframes design-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 600px) {
+  .design-actions-wrapper {
+    top: 9px;
+    right: 9px;
+  }
+
+  .design-more-button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .design-actions-menu {
+    width: min(260px, calc(100vw - 32px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .design-card-managed,
+  .design-card-managed .design-image,
+  .design-image-overlay,
+  .design-actions-menu {
+    animation: none;
+    transition: none;
+  }
+}

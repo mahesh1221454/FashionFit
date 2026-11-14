@@ -1,0 +1,55 @@
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Node / React / Vite
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+
+# Generated and uploaded images
+generated/
+uploads/
+outputs/
+temp/
+tmp/
+*.sqlite
+*.sqlite3
+*.db
+
+# Backups
+*.bak
+*.backup*
+*.log
+*_backup/
+*_backups/
+src_backup/
+src_before_landing_change/
+_popup_backup/
+_ui_text_backups/
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+

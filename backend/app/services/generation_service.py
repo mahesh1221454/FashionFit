@@ -240,7 +240,8 @@ def generate_view(
         person_image_path,
         view,
         str(job.id),
-    )
+                 usage_job_id=str(job.id),
+             )
 
     output_url = result.get(
         "image_url"

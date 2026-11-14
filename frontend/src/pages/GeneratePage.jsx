@@ -236,7 +236,7 @@ export default function GeneratePage() {
             <button
               className="secondary-button"
               onClick={() =>
-                navigate("/")
+                navigate("/portal")
               }
               type="button"
             >
@@ -269,7 +269,7 @@ export default function GeneratePage() {
 
       <div className="generation-page-inner">
 
-        <GenerationProgress
+        <GenerationProgress job={job}
           progress={
             loading
               ? 0

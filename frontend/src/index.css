@@ -1,4 +1,4 @@
-/* =========================================================
+﻿/* =========================================================
    DESIGN SYSTEM
 ========================================================= */
 
@@ -2543,3 +2543,562 @@ img {
     height: 260px;
   }
 }
+
+/* ==========================================
+   PERFECTMESS - PREMIUM SIDEBAR BRANDING
+   ========================================== */
+
+.sidebar-company-logo {
+  display: block;
+
+  width: 52px;
+  height: 52px;
+
+  max-width: 100%;
+
+  object-fit: contain;
+  object-position: center;
+
+  border-radius: 12px;
+
+  transition:
+    transform 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 350ms ease;
+}
+
+/* Subtle animation when hovering over logo */
+.sidebar-company-logo:hover {
+  transform: scale(1.07);
+  filter: drop-shadow(
+    0 5px 12px rgba(249, 115, 22, 0.22)
+  );
+}
+
+/* Responsive sizing */
+@media (max-width: 600px) {
+  .sidebar-company-logo {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-company-logo {
+    transition: none;
+  }
+
+  .sidebar-company-logo:hover {
+    transform: none;
+  }
+}
+
+/* PM_MONOGRAM_FINAL_START */
+
+/* Sidebar brand layout */
+.sidebar .brand {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* White logo background */
+.sidebar .brand .brand-icon,
+.sidebar .brand .logo-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    flex: 0 0 78px !important;
+    width: 78px !important;
+    min-width: 78px !important;
+    max-width: 78px !important;
+
+    height: 78px !important;
+    min-height: 78px !important;
+    max-height: 78px !important;
+
+    padding: 5px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+
+    background: #FFFFFF !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+}
+
+/* New monogram image */
+.sidebar .brand img[src*="perfectmess-monogram"] {
+    display: block !important;
+    width: 68px !important;
+    height: 68px !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 68px !important;
+    max-height: 68px !important;
+
+    object-fit: contain !important;
+    object-position: center !important;
+
+    flex-shrink: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+
+    background: #FFFFFF !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+    box-shadow: none !important;
+}
+
+/* Prevent text overlap */
+.sidebar .brand .brand-text,
+.sidebar .brand .brand-info {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    width: auto !important;
+    position: relative !important;
+    transform: none !important;
+    margin: 0 !important;
+}
+
+/* Keep the heading readable */
+.sidebar .brand .brand-text h1,
+.sidebar .brand .brand-info h1,
+.sidebar .brand .brand-text h2,
+.sidebar .brand .brand-info h2 {
+    font-size: 21px !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+}
+
+/* PM_MONOGRAM_FINAL_END */
+
+/* PM_SMALL_HEADING_START */
+
+/* Reduce PerfectMess heading size */
+.sidebar .brand .brand-text h1,
+.sidebar .brand .brand-info h1,
+.sidebar .brand .brand-text h2,
+.sidebar .brand .brand-info h2 {
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.3px !important;
+    white-space: nowrap !important;
+}
+
+/* Keep the subtitle compact */
+.sidebar .brand .brand-text p,
+.sidebar .brand .brand-info p {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+    white-space: nowrap !important;
+}
+
+/* PM_SMALL_HEADING_END */
+
+/* PM_BRAND_SPACING_START */
+
+/* Reduce the gap between the logo and text */
+.sidebar .brand {
+    gap: 6px !important;
+}
+
+/* Decrease PerfectMess heading by 2px */
+.sidebar .brand .brand-text h1,
+.sidebar .brand .brand-info h1,
+.sidebar .brand .brand-text h2,
+.sidebar .brand .brand-info h2 {
+    font-size: 15px !important;
+    line-height: 1.25 !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+}
+
+/* Preserve compact subtitle */
+.sidebar .brand .brand-text p,
+.sidebar .brand .brand-info p {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+}
+
+/* PM_BRAND_SPACING_END */
+
+/* PM_LOGO_SPACING_UPDATE_START */
+
+/* Logo and text alignment */
+.sidebar .brand {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+
+    gap: 12px !important;
+    min-width: 0 !important;
+}
+
+/* Slightly larger white logo background */
+.sidebar .brand .brand-icon,
+.sidebar .brand .logo-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    flex: 0 0 84px !important;
+
+    width: 84px !important;
+    min-width: 84px !important;
+    max-width: 84px !important;
+
+    height: 84px !important;
+    min-height: 84px !important;
+    max-height: 84px !important;
+
+    padding: 4px !important;
+
+    background: #FFFFFF !important;
+    border-radius: 12px !important;
+
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+/* Increase the new monogram logo size */
+.sidebar .brand img[src*="perfectmess-monogram"] {
+    display: block !important;
+
+    width: 76px !important;
+    height: 76px !important;
+
+    max-width: 76px !important;
+    max-height: 76px !important;
+
+    object-fit: contain !important;
+    object-position: center !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    transform: none !important;
+    opacity: 1 !important;
+}
+
+/* Keep the PerfectMess text compact */
+.sidebar .brand .brand-text h1,
+.sidebar .brand .brand-info h1,
+.sidebar .brand .brand-text h2,
+.sidebar .brand .brand-info h2 {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+}
+
+/* Prevent overlapping */
+.sidebar .brand .brand-text,
+.sidebar .brand .brand-info {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    position: relative !important;
+}
+
+/* PM_LOGO_SPACING_UPDATE_END */
+
+/* PM_TEXT_SPACING_START */
+
+/* Increase gap between logo and text */
+.sidebar .brand {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 20px !important;
+}
+
+/* Decrease PerfectMess heading */
+.sidebar .brand .brand-text h1,
+.sidebar .brand .brand-info h1,
+.sidebar .brand .brand-text h2,
+.sidebar .brand .brand-info h2 {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap !important;
+}
+
+/* Smaller subtitle */
+.sidebar .brand .brand-text p,
+.sidebar .brand .brand-info p {
+    font-size: 10px !important;
+    line-height: 1.4 !important;
+    white-space: nowrap !important;
+}
+
+/* Keep the text beside the logo */
+.sidebar .brand .brand-text,
+.sidebar .brand .brand-info {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    position: relative !important;
+    transform: none !important;
+}
+
+/* PM_TEXT_SPACING_END */
+
+/* PM_BRAND_LAYOUT_CLEAN_START */
+
+/* Keep branding inside sidebar boundaries */
+.sidebar .brand {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+
+    gap: 18px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Fixed-width logo area */
+.sidebar .brand .brand-icon,
+.sidebar .brand .logo-container {
+    position: relative !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    flex: 0 0 84px !important;
+    width: 84px !important;
+    min-width: 84px !important;
+    max-width: 84px !important;
+
+    height: 84px !important;
+    min-height: 84px !important;
+    max-height: 84px !important;
+
+    padding: 4px !important;
+    margin: 0 !important;
+
+    box-sizing: border-box !important;
+    background: #FFFFFF !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+}
+
+/* Fit monogram inside its own area */
+.sidebar .brand img[src*="perfectmess-monogram"] {
+    display: block !important;
+
+    position: static !important;
+    flex: none !important;
+
+    width: 76px !important;
+    min-width: 76px !important;
+    max-width: 76px !important;
+
+    height: 76px !important;
+    min-height: 76px !important;
+    max-height: 76px !important;
+
+    object-fit: contain !important;
+    object-position: center !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+}
+
+/* Reserve separate space for text */
+.sidebar .brand .brand-text,
+.sidebar .brand .brand-info {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+
+    position: static !important;
+    flex: 1 1 auto !important;
+
+    min-width: 0 !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+
+    transform: none !important;
+}
+
+/* PerfectMess heading */
+.sidebar .brand .brand-text h1,
+.sidebar .brand .brand-info h1,
+.sidebar .brand .brand-text h2,
+.sidebar .brand .brand-info h2 {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    white-space: nowrap !important;
+}
+
+/* Subtitle */
+.sidebar .brand .brand-text p,
+.sidebar .brand .brand-info p {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+
+    margin: 3px 0 0 !important;
+    padding: 0 !important;
+
+    white-space: nowrap !important;
+}
+
+/* PM_BRAND_LAYOUT_CLEAN_END */
+
+/* PERFECTMESS_REAL_BRAND_FIX_START */
+
+/* Correct actual Sidebar.jsx branding layout */
+
+.sidebar .brand .sidebar-brand-top {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+
+    gap: 18px !important;
+
+    width: 100% !important;
+    min-width: 0 !important;
+
+    box-sizing: border-box !important;
+}
+
+/* Fixed logo area with white background */
+
+.sidebar .brand .sidebar-brand-icon {
+    position: relative !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    flex: 0 0 82px !important;
+
+    width: 82px !important;
+    min-width: 82px !important;
+    max-width: 82px !important;
+
+    height: 82px !important;
+    min-height: 82px !important;
+    max-height: 82px !important;
+
+    padding: 4px !important;
+    margin: 0 !important;
+
+    box-sizing: border-box !important;
+
+    background: #FFFFFF !important;
+    border-radius: 10px !important;
+
+    overflow: hidden !important;
+
+    transform: none !important;
+}
+
+/* New monogram image */
+
+.sidebar .brand .sidebar-brand-icon .sidebar-company-logo {
+    display: block !important;
+
+    position: static !important;
+
+    flex: 0 0 auto !important;
+
+    width: 74px !important;
+    min-width: 74px !important;
+    max-width: 74px !important;
+
+    height: 74px !important;
+    min-height: 74px !important;
+    max-height: 74px !important;
+
+    object-fit: contain !important;
+    object-position: center !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    background: transparent !important;
+
+    border: none !important;
+    box-shadow: none !important;
+
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+}
+
+/* Text gets separate space to prevent overlap */
+
+.sidebar .brand .sidebar-brand-text {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+
+    position: static !important;
+
+    flex: 1 1 auto !important;
+
+    min-width: 0 !important;
+    width: auto !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    transform: none !important;
+}
+
+/* PerfectMess heading */
+
+.sidebar .brand .sidebar-brand-text h2 {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    white-space: nowrap !important;
+}
+
+/* Personal Styling Studio subtitle */
+
+.sidebar .brand .sidebar-brand-text p {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+
+    margin: 4px 0 0 !important;
+    padding: 0 !important;
+
+    white-space: nowrap !important;
+}
+
+/* PERFECTMESS_REAL_BRAND_FIX_END */
+

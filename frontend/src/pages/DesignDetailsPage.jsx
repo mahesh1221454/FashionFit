@@ -498,7 +498,7 @@ export default function DesignDetailsPage() {
             className="secondary-button"
 
             onClick={() =>
-              navigate("/")
+              navigate("/portal")
             }
 
             type="button"
@@ -534,7 +534,7 @@ export default function DesignDetailsPage() {
             className="back-button"
 
             onClick={() =>
-              navigate("/")
+              navigate("/portal")
             }
 
             type="button"

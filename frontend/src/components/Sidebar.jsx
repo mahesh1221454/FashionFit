@@ -1,4 +1,4 @@
-
+﻿
 import { useNavigate } from "react-router-dom";
 import {
   Upload,
@@ -34,11 +34,11 @@ export default function Sidebar({
       <div className="brand">
         <div className="sidebar-brand-top">
           <div className="sidebar-brand-icon">
-            <Shirt size={20} strokeWidth={1.8} />
+            <img src="/perfectmess-monogram.png" alt="PerfectMess Logo" className="sidebar-company-logo" />
           </div>
 
           <div className="sidebar-brand-text">
-            <h2>Fashion AI</h2>
+            <h2>PerfectMess</h2>
             <p>Personal Styling Studio</p>
           </div>
         </div>
@@ -130,3 +130,4 @@ export default function Sidebar({
     </aside>
   );
 }
+

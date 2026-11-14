@@ -1155,7 +1155,7 @@ export default function ResultsPage() {
           <button
             className="secondary-button"
             onClick={() =>
-              navigate("/")
+              navigate("/portal")
             }
             type="button"
           >

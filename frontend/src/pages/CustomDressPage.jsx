@@ -1,49 +1,102 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  Clock3,
+  FolderPlus,
   ImagePlus,
   LoaderCircle,
-  Shirt,
+  RotateCcw,
+  Sparkles,
   UploadCloud,
   X,
 } from "lucide-react";
 
+import Sidebar from "../components/Sidebar";
+
 import {
   getCategories,
-  createCustomDesign,
+  createBulkCustomDesigns,
+  createTemporaryGeneration,
 } from "../services/api";
 
-import Sidebar from "../components/Sidebar";
 import "../styles/customDress.css";
+import "../styles/temporaryTryOn.css";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_BYTES = Number(
+  import.meta.env.VITE_CUSTOM_DRESS_MAX_BYTES
+);
 
-const SUPPORTED_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
+const ALLOWED_TYPES = (
+  import.meta.env.VITE_CUSTOM_DRESS_ALLOWED_TYPES || ""
+)
+  .split(",")
+  .map((type) => type.trim())
+  .filter(Boolean);
+
+const MAX_DRESS_NAME = Number(
+  import.meta.env.VITE_CUSTOM_DRESS_NAME_MAX_LENGTH
+);
+
+const MAX_CATEGORY_NAME = Number(
+  import.meta.env.VITE_CUSTOM_CATEGORY_MAX_LENGTH
+);
+
+const MAX_BULK_IMAGES = Number(
+  import.meta.env.VITE_CUSTOM_BULK_MAX_IMAGES
+);
+
+const PHOTO_VIEWS = [
+  { key: "front", label: "Front View" },
+  { key: "left", label: "Left View" },
+  { key: "right", label: "Right View" },
+  { key: "back", label: "Back View" },
 ];
 
-export default function CustomDressPage() {
-  const navigate = useNavigate();
+function getErrorMessage(error) {
+  const detail = error?.response?.data?.detail;
 
-  const [categories, setCategories] = useState([]);
-  const [file, setFile] = useState(null);
+  if (typeof detail === "string") return detail;
+
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => item.msg || "Validation error")
+      .join(", ");
+  }
+
+  return error?.message || "Something went wrong.";
+}
+
+function getNameFromFile(filename) {
+  return filename
+    .replace(/\.[^.]+$/, "")
+    .replace(/[_-]+/g, " ")
+    .trim();
+}
+
+function createDressEntry(file) {
+  return {
+    id: crypto.randomUUID(),
+    file,
+    name: getNameFromFile(file.name).slice(
+      0,
+      MAX_DRESS_NAME || undefined
+    ),
+  };
+}
+
+function ImageField({
+  label,
+  file,
+  onChange,
+  description,
+  disabled = false,
+}) {
   const [preview, setPreview] = useState("");
-  const [dressName, setDressName] = useState("");
-  const [dragging, setDragging] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    getCategories()
-      .then(setCategories)
-      .catch(console.error);
-  }, []);
 
   useEffect(() => {
     if (!file) {
@@ -57,62 +110,453 @@ export default function CustomDressPage() {
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  const handleSelectFile = (selectedFile) => {
-    setError("");
+  return (
+    <div className="tryon-image-field">
+      <div className="tryon-field-heading">
+        <span>{label}</span>
 
-    if (!selectedFile) return;
+        {file && !disabled && (
+          <button
+            type="button"
+            aria-label={`Remove ${label}`}
+            onClick={() => onChange(null)}
+          >
+            <X size={15} />
+          </button>
+        )}
+      </div>
 
-    if (!SUPPORTED_TYPES.includes(selectedFile.type)) {
-      setError("Please select a JPG, PNG or WebP image.");
-      return;
-    }
+      <label className="tryon-image-drop">
+        <input
+          type="file"
+          accept={ALLOWED_TYPES.join(",")}
+          hidden
+          disabled={disabled}
+          onChange={(event) => {
+            onChange(event.target.files?.[0] || null);
+            event.target.value = "";
+          }}
+        />
 
-    if (selectedFile.size > MAX_FILE_SIZE) {
-      setError("Image size must be 10 MB or less.");
-      return;
-    }
+        {preview ? (
+          <img
+            src={preview}
+            alt={`${label} preview`}
+            className="tryon-preview"
+          />
+        ) : (
+          <div className="tryon-empty-preview">
+            <ImagePlus size={24} />
+            <span>Choose Image</span>
+            {description && <small>{description}</small>}
+          </div>
+        )}
+      </label>
 
-    setFile(selectedFile);
-  };
+      {file && (
+        <span className="tryon-filename">
+          {file.name}
+        </span>
+      )}
+    </div>
+  );
+}
 
-  const handleDrop = (event) => {
-    event.preventDefault();
-    setDragging(false);
-    handleSelectFile(event.dataTransfer.files[0]);
-  };
+function DressPreview({ dress }) {
+  const url = useMemo(
+    () => URL.createObjectURL(dress.file),
+    [dress.file]
+  );
 
-  const handleContinue = async () => {
-    if (!file || uploading) {
-      setError("Please upload your dress image.");
-      return;
-    }
+  useEffect(() => {
+    return () => URL.revokeObjectURL(url);
+  }, [url]);
 
-    try {
-      setUploading(true);
-      setError("");
+  return (
+    <img
+      src={url}
+      alt={dress.name || dress.file.name}
+      style={{
+        width: "100%",
+        height: 140,
+        objectFit: "cover",
+        borderRadius: 10,
+      }}
+    />
+  );
+}
 
-      const design = await createCustomDesign({
-        file,
-        name: dressName.trim() || "My Custom Dress",
+export default function CustomDressPage() {
+  const navigate = useNavigate();
+
+  const [workflow, setWorkflow] = useState(null);
+
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] =
+    useState(true);
+
+  const [categoryMode, setCategoryMode] =
+    useState("existing");
+
+  const [categoryId, setCategoryId] = useState("");
+  const [newCategoryName, setNewCategoryName] =
+    useState("");
+
+  const [dresses, setDresses] = useState([]);
+  const [uploadProgress, setUploadProgress] =
+    useState(null);
+
+  const [dressFile, setDressFile] = useState(null);
+
+  const [photos, setPhotos] = useState({
+    front: null,
+    left: null,
+    right: null,
+    back: null,
+  });
+
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] =
+    useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    getCategories()
+      .then((data) => {
+        if (!active) return;
+
+        const items = Array.isArray(data) ? data : [];
+
+        setCategories(items);
+        setCategoryId(items[0]?.id || "");
+
+        if (!items.length) {
+          setCategoryMode("new");
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setError(
+            "Unable to load categories from the backend."
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setCategoriesLoading(false);
       });
 
-      if (!design?.id) {
-        throw new Error("No design ID returned by server.");
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const changeWorkflow = (next) => {
+    if (saving) return;
+
+    setWorkflow(next);
+    setError("");
+    setSuccessMessage("");
+    setUploadProgress(null);
+  };
+
+  const validateFile = (file) => {
+    if (!file) {
+      throw new Error("Please select an image.");
+    }
+
+    if (
+      !Number.isFinite(MAX_BYTES) ||
+      MAX_BYTES <= 0 ||
+      !ALLOWED_TYPES.length
+    ) {
+      throw new Error(
+        "Upload settings are missing in frontend/.env."
+      );
+    }
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      throw new Error(
+        `${file.name}: Unsupported image format.`
+      );
+    }
+
+    if (file.size > MAX_BYTES) {
+      throw new Error(
+        `${file.name}: Image exceeds ${
+          Math.round(MAX_BYTES / 1024 / 1024)
+        } MB.`
+      );
+    }
+
+    return true;
+  };
+
+  const addDressFiles = (files) => {
+    try {
+      if (
+        !Number.isInteger(MAX_BULK_IMAGES) ||
+        MAX_BULK_IMAGES <= 0
+      ) {
+        throw new Error(
+          "VITE_CUSTOM_BULK_MAX_IMAGES is missing or invalid in frontend/.env."
+        );
       }
 
-      navigate(`/design/${design.id}`);
+      const chosen = Array.from(files || []);
+
+      if (!chosen.length) return;
+
+      if (dresses.length + chosen.length > MAX_BULK_IMAGES) {
+        throw new Error(
+          `You can select a maximum of ${MAX_BULK_IMAGES} images.`
+        );
+      }
+
+      chosen.forEach(validateFile);
+
+      const entries = chosen.map(createDressEntry);
+
+      setDresses((previous) => [
+        ...previous,
+        ...entries,
+      ]);
+
+      setError("");
+      setSuccessMessage("");
+      setUploadProgress(null);
     } catch (err) {
-      console.error("Custom dress upload failed:", err);
+      setError(getErrorMessage(err));
+    }
+  };
 
-      const detail = err.response?.data?.detail;
+  const removeDress = (id) => {
+    if (saving) return;
 
-      setError(
-        typeof detail === "string"
-          ? detail
-          : err.message || "Unable to upload the dress."
-      );
+    setDresses((previous) =>
+      previous.filter((dress) => dress.id !== id)
+    );
+
+    setError("");
+    setSuccessMessage("");
+  };
+
+  const renameDress = (id, name) => {
+    setDresses((previous) =>
+      previous.map((dress) =>
+        dress.id === id
+          ? { ...dress, name }
+          : dress
+      )
+    );
+  };
+
+  const updateFile = (setter, file) => {
+    try {
+      if (file) validateFile(file);
+      setter(file);
+      setError("");
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  };
+
+  const updatePhoto = (view, file) => {
+    try {
+      if (file) validateFile(file);
+
+      setPhotos((previous) => ({
+        ...previous,
+        [view]: file,
+      }));
+
+      setError("");
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  };
+
+  const savePermanentDresses = async () => {
+    if (saving) return;
+
+    try {
+      if (!dresses.length) {
+        throw new Error(
+          "Please select at least one dress image."
+        );
+      }
+
+      if (
+        !Number.isInteger(MAX_BULK_IMAGES) ||
+        dresses.length > MAX_BULK_IMAGES
+      ) {
+        throw new Error(
+          "The selected image count exceeds the allowed limit."
+        );
+      }
+
+      for (const dress of dresses) {
+        validateFile(dress.file);
+
+        if (!dress.name.trim()) {
+          throw new Error(
+            `Enter a name for ${dress.file.name}.`
+          );
+        }
+
+        if (
+          !Number.isInteger(MAX_DRESS_NAME) ||
+          dress.name.trim().length > MAX_DRESS_NAME
+        ) {
+          throw new Error(
+            `Invalid dress name length: ${dress.file.name}.`
+          );
+        }
+      }
+
+      if (categoryMode === "existing" && !categoryId) {
+        throw new Error(
+          "Select an existing category."
+        );
+      }
+
+      if (
+        categoryMode === "new" &&
+        !newCategoryName.trim()
+      ) {
+        throw new Error(
+          "Enter a new category name."
+        );
+      }
+
+      if (
+        categoryMode === "new" &&
+        newCategoryName.trim().length > MAX_CATEGORY_NAME
+      ) {
+        throw new Error(
+          "New category name is too long."
+        );
+      }
+
+      setSaving(true);
+      setError("");
+      setSuccessMessage("");
+
+      setUploadProgress({
+        completed: 0,
+        total: dresses.length,
+        uploaded: 0,
+        failed: 0,
+        currentName: "",
+      });
+
+      const result = await createBulkCustomDesigns({
+        dresses,
+        categoryMode,
+        categoryId,
+        newCategoryName,
+        onProgress: setUploadProgress,
+      });
+
+      // Do not send successful images again on retry.
+      setDresses(result.failed.map((dress) => ({
+        id: dress.id,
+        file: dress.file,
+        name: dress.name,
+      })));
+
+      if (result.categoryId) {
+        // If a new category was created, switch to
+        // existing mode for retrying failed images.
+        setCategoryMode("existing");
+        setCategoryId(result.categoryId);
+
+        try {
+          const refreshedCategories =
+            await getCategories();
+
+          if (Array.isArray(refreshedCategories)) {
+            setCategories(refreshedCategories);
+          }
+        } catch {
+          // Uploads remain saved even if category
+          // refresh fails.
+        }
+      }
+
+      if (result.failed.length) {
+        setSuccessMessage(
+          `${result.uploaded.length} image(s) uploaded successfully.`
+        );
+
+        setError(
+          result.failed
+            .map(
+              (dress) =>
+                `${dress.file.name}: ${dress.error}`
+            )
+            .join("\n")
+        );
+
+        return;
+      }
+
+      if (!result.categoryId) {
+        throw new Error(
+          "Backend did not return a category ID."
+        );
+      }
+
+      navigate("/portal", {
+        state: {
+          categoryId: result.categoryId,
+          designId:
+            result.uploaded[0]?.design?.id || null,
+        },
+      });
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
-      setUploading(false);
+      setSaving(false);
+    }
+  };
+
+  const startTemporaryTryOn = async () => {
+    if (saving) return;
+
+    try {
+      validateFile(dressFile);
+
+      for (const { key, label } of PHOTO_VIEWS) {
+        if (!photos[key]) {
+          throw new Error(
+            `Upload your ${label} photograph.`
+          );
+        }
+
+        validateFile(photos[key]);
+      }
+
+      setSaving(true);
+      setError("");
+
+      const result = await createTemporaryGeneration({
+        dress: dressFile,
+        ...photos,
+      });
+
+      if (!result?.job_id) {
+        throw new Error(
+          "Backend did not return a generation ID."
+        );
+      }
+
+      navigate(`/generate/${result.job_id}`);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -122,233 +566,556 @@ export default function CustomDressPage() {
         categories={categories}
         selectedCategory={null}
         onSelect={(category) =>
-          navigate("/", {
+          navigate("/portal", {
             state: { categoryId: category.id },
           })
         }
       />
 
       <main className="portal-content custom-page-content">
-        <button
-          type="button"
-          className="custom-back-link"
-          onClick={() => navigate("/")}
-        >
-          <ArrowLeft size={17} />
-          Back to collection
-        </button>
+        <div className="tryon-page">
+          <button
+            type="button"
+            className="custom-back-link"
+            disabled={saving}
+            onClick={() =>
+              workflow
+                ? changeWorkflow(null)
+                : navigate("/portal")
+            }
+          >
+            <ArrowLeft size={17} />
+            {workflow
+              ? "Back to Upload Options"
+              : "Back to Collection"}
+          </button>
 
-        <header className="custom-page-header">
-          <span className="custom-eyebrow">
-            CREATE YOUR OWN STYLE
-          </span>
+          <header className="tryon-page-header">
+            <span className="custom-eyebrow">
+              FASHION AI STUDIO
+            </span>
 
-          <h1>Upload Your Custom Dress</h1>
+            <h1>
+              {workflow === "permanent"
+                ? "Add Dresses to Portal"
+                : workflow === "temporary"
+                ? "Temporary AI Try-On"
+                : "Upload Custom Dress"}
+            </h1>
 
-          <p>
-            Have a dress design you love? Upload a clear
-            photograph of your garment and use it for
-            your personalized AI fashion try-on.
-          </p>
-        </header>
+            <p>
+              {workflow === "temporary"
+                ? "Try your own dress using AI without saving it to the catalog."
+                : workflow === "permanent"
+                ? "Upload one or multiple dresses into a new or existing category."
+                : "Choose whether you want to save your dress or try it once."}
+            </p>
+          </header>
 
-        <div className="custom-page-grid">
-          <section className="custom-upload-panel">
-            <div className="custom-panel-heading">
-              <div className="custom-heading-icon">
-                <Shirt size={22} />
-              </div>
-
-              <div>
-                <h2>Your Dress Design</h2>
-                <p>Select your own garment photograph.</p>
-              </div>
-            </div>
-
-            <div className="custom-form-field">
-              <label htmlFor="customDressName">
-                Dress Name
-              </label>
-
-              <input
-                id="customDressName"
-                type="text"
-                maxLength={100}
-                value={dressName}
-                onChange={(event) =>
-                  setDressName(event.target.value)
+          {!workflow && (
+            <div className="tryon-choice-grid">
+              <button
+                type="button"
+                className="tryon-choice-card"
+                onClick={() =>
+                  changeWorkflow("permanent")
                 }
-                placeholder="e.g. My Wedding Outfit"
-              />
-            </div>
-
-            <label
-              htmlFor="customDressFile"
-              className={
-                "custom-dropzone" +
-                (dragging ? " dragging" : "") +
-                (file ? " has-file" : "")
-              }
-              onDragOver={(event) => {
-                event.preventDefault();
-                setDragging(true);
-              }}
-              onDragLeave={(event) => {
-                event.preventDefault();
-                setDragging(false);
-              }}
-              onDrop={handleDrop}
-            >
-              <input
-                id="customDressFile"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                hidden
-                onChange={(event) => {
-                  handleSelectFile(event.target.files[0]);
-                  event.target.value = "";
-                }}
-              />
-
-              {preview ? (
-                <div className="custom-preview-container">
-                  <img
-                    src={preview}
-                    alt="Custom dress preview"
-                  />
-
-                  <span className="custom-change-image">
-                    <ImagePlus size={16} />
-                    Change Image
-                  </span>
+              >
+                <div className="tryon-choice-icon">
+                  <FolderPlus size={28} />
                 </div>
-              ) : (
-                <div className="custom-drop-content">
-                  <div className="custom-drop-icon">
-                    <UploadCloud size={31} />
-                  </div>
 
-                  <h3>Upload Your Dress Image</h3>
+                <h2>Add to Portal</h2>
 
-                  <p>
-                    Drag and drop your image here
-                    or click to browse.
-                  </p>
+                <p>
+                  Save one or multiple dresses under
+                  a new or existing category.
+                </p>
 
-                  <span className="custom-browse-button">
-                    Browse Image
-                  </span>
-
-                  <small>
-                    JPG, PNG or WebP · Maximum 10 MB
-                  </small>
-                </div>
-              )}
-            </label>
-
-            {file && (
-              <div className="custom-file-info">
-                <CheckCircle2 size={18} />
-
-                <span className="custom-file-name">
-                  {file.name}
+                <span className="tryon-choice-footer">
+                  Permanent Catalog
+                  <ArrowRight size={18} />
                 </span>
+              </button>
 
+              <button
+                type="button"
+                className="tryon-choice-card"
+                onClick={() =>
+                  changeWorkflow("temporary")
+                }
+              >
+                <div className="tryon-choice-icon">
+                  <Sparkles size={28} />
+                </div>
+
+                <h2>Try Once — Unsaved Dress</h2>
+
+                <p>
+                  Upload a dress and customer photos,
+                  generate try-on results, and keep
+                  the dress out of your catalog.
+                </p>
+
+                <span className="tryon-choice-footer">
+                  Temporary Try-On
+                  <ArrowRight size={18} />
+                </span>
+              </button>
+            </div>
+          )}
+
+          {workflow === "permanent" && (
+            <div className="tryon-form-card">
+              <h2>Choose a Category</h2>
+
+              <div className="tryon-mode-grid">
                 <button
                   type="button"
-                  aria-label="Remove selected image"
+                  disabled={
+                    saving || categories.length === 0
+                  }
+                  className={
+                    "tryon-mode-option" +
+                    (categoryMode === "existing"
+                      ? " active"
+                      : "")
+                  }
                   onClick={() => {
-                    setFile(null);
+                    setCategoryMode("existing");
                     setError("");
                   }}
                 >
-                  <X size={17} />
+                  <CheckCircle2 size={18} />
+                  Existing Category
+                </button>
+
+                <button
+                  type="button"
+                  disabled={saving}
+                  className={
+                    "tryon-mode-option" +
+                    (categoryMode === "new"
+                      ? " active"
+                      : "")
+                  }
+                  onClick={() => {
+                    setCategoryMode("new");
+                    setError("");
+                  }}
+                >
+                  <FolderPlus size={18} />
+                  Create New Category
                 </button>
               </div>
-            )}
 
-            {error && (
-              <div className="custom-error" role="alert">
-                {error}
+              {categoryMode === "existing" ? (
+                <div className="tryon-form-field">
+                  <label htmlFor="existing-category">
+                    Select Category
+                  </label>
+
+                  <select
+                    id="existing-category"
+                    value={categoryId}
+                    disabled={
+                      categoriesLoading || saving
+                    }
+                    onChange={(event) =>
+                      setCategoryId(event.target.value)
+                    }
+                  >
+                    {categories.map((category) => (
+                      <option
+                        key={category.id}
+                        value={category.id}
+                      >
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="tryon-form-field">
+                  <label htmlFor="new-category">
+                    New Category Name
+                  </label>
+
+                  <input
+                    id="new-category"
+                    value={newCategoryName}
+                    disabled={saving}
+                    maxLength={
+                      MAX_CATEGORY_NAME || undefined
+                    }
+                    placeholder="Enter new category name"
+                    onChange={(event) =>
+                      setNewCategoryName(
+                        event.target.value
+                      )
+                    }
+                  />
+                </div>
+              )}
+
+              <div className="tryon-form-field">
+                <label>
+                  Dress Images
+                </label>
+
+                <label
+                  className="tryon-image-drop"
+                  style={{
+                    display: "flex",
+                    padding: 24,
+                    cursor: saving
+                      ? "not-allowed"
+                      : "pointer",
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept={ALLOWED_TYPES.join(",")}
+                    multiple
+                    hidden
+                    disabled={saving}
+                    onChange={(event) => {
+                      addDressFiles(
+                        event.target.files
+                      );
+                      event.target.value = "";
+                    }}
+                  />
+
+                  <div className="tryon-empty-preview">
+                    <UploadCloud size={30} />
+                    <strong>
+                      Choose Multiple Dress Images
+                    </strong>
+                    <small>
+                      Use Ctrl + Click or Shift + Click
+                    </small>
+                    <small>
+                      Maximum {MAX_BULK_IMAGES} images
+                    </small>
+                  </div>
+                </label>
               </div>
-            )}
 
-            <button
-              type="button"
-              className="custom-continue-button"
-              disabled={!file || uploading}
-              onClick={handleContinue}
-            >
-              {uploading ? (
+              {dresses.length > 0 && (
                 <>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginTop: 16,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <strong>
+                      {dresses.length} image(s) selected
+                    </strong>
+
+                    <button
+                      type="button"
+                      className="tryon-reset-button"
+                      disabled={saving}
+                      onClick={() => {
+                        setDresses([]);
+                        setError("");
+                        setUploadProgress(null);
+                      }}
+                    >
+                      <RotateCcw size={15} />
+                      Clear All
+                    </button>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(170px, 1fr))",
+                      gap: 12,
+                    }}
+                  >
+                    {dresses.map((dress) => (
+                      <div
+                        key={dress.id}
+                        style={{
+                          border:
+                            "1px solid rgba(120,120,120,0.2)",
+                          borderRadius: 12,
+                          padding: 10,
+                          minWidth: 0,
+                        }}
+                      >
+                        <div
+                          style={{
+                            position: "relative",
+                          }}
+                        >
+                          <DressPreview dress={dress} />
+
+                          <button
+                            type="button"
+                            aria-label="Remove image"
+                            disabled={saving}
+                            onClick={() =>
+                              removeDress(dress.id)
+                            }
+                            style={{
+                              position: "absolute",
+                              top: 6,
+                              right: 6,
+                              border: 0,
+                              background:
+                                "rgba(0,0,0,0.7)",
+                              color: "white",
+                              borderRadius: "50%",
+                              width: 28,
+                              height: 28,
+                              display: "grid",
+                              placeItems: "center",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <X size={15} />
+                          </button>
+                        </div>
+
+                        <div className="tryon-form-field">
+                          <label
+                            htmlFor={`dress-${dress.id}`}
+                          >
+                            Dress Name
+                          </label>
+
+                          <input
+                            id={`dress-${dress.id}`}
+                            value={dress.name}
+                            disabled={saving}
+                            maxLength={
+                              MAX_DRESS_NAME || undefined
+                            }
+                            onChange={(event) =>
+                              renameDress(
+                                dress.id,
+                                event.target.value
+                              )
+                            }
+                          />
+                        </div>
+
+                        <small
+                          style={{
+                            display: "block",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={dress.file.name}
+                        >
+                          {dress.file.name}
+                        </small>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <p className="tryon-helper-text">
+                Every image will be saved as a separate
+                dress in the selected category and can
+                be used for future AI try-ons.
+              </p>
+
+              {uploadProgress && (
+                <div
+                  aria-live="polite"
+                  style={{ marginTop: 16 }}
+                >
+                  <strong>
+                    Uploaded {uploadProgress.uploaded}
+                    {" / "}
+                    {uploadProgress.total}
+                  </strong>
+
+                  <p>
+                    Processed {uploadProgress.completed}
+                    {" / "}
+                    {uploadProgress.total}
+                    {uploadProgress.currentName
+                      ? ` — ${uploadProgress.currentName}`
+                      : ""}
+                  </p>
+
+                  <progress
+                    value={uploadProgress.completed}
+                    max={uploadProgress.total}
+                    style={{
+                      width: "100%",
+                      accentColor: "#f97316",
+                    }}
+                  />
+                </div>
+              )}
+
+              <button
+                type="button"
+                className="tryon-primary-button"
+                disabled={saving || !dresses.length}
+                onClick={savePermanentDresses}
+              >
+                {saving ? (
                   <LoaderCircle
                     size={18}
                     className="custom-spinner"
                   />
-                  Uploading Dress...
-                </>
-              ) : (
-                <>
-                  Continue to Try-On
+                ) : (
+                  <FolderPlus size={18} />
+                )}
+
+                {saving
+                  ? "Uploading Dresses..."
+                  : `Save ${dresses.length} Dress${
+                      dresses.length === 1
+                        ? ""
+                        : "es"
+                    } to Portal`}
+              </button>
+            </div>
+          )}
+
+          {workflow === "temporary" && (
+            <div className="tryon-form-card">
+              <div className="tryon-section-title">
+                <h2>1. Upload Dress Reference</h2>
+                <p>
+                  This dress will not be saved to
+                  the permanent catalog.
+                </p>
+              </div>
+
+              <div className="tryon-dress-field">
+                <ImageField
+                  label="Your Dress"
+                  file={dressFile}
+                  disabled={saving}
+                  onChange={(file) =>
+                    updateFile(setDressFile, file)
+                  }
+                  description="JPG, PNG or WebP"
+                />
+              </div>
+
+              <div className="tryon-section-title">
+                <h2>2. Upload Customer Photographs</h2>
+                <p>
+                  Provide four views of the person
+                  who will try on the dress.
+                </p>
+              </div>
+
+              <div className="tryon-photo-grid">
+                {PHOTO_VIEWS.map(({ key, label }) => (
+                  <ImageField
+                    key={key}
+                    label={label}
+                    file={photos[key]}
+                    disabled={saving}
+                    onChange={(file) =>
+                      updatePhoto(key, file)
+                    }
+                  />
+                ))}
+              </div>
+
+              <div className="tryon-temporary-notice">
+                <Clock3 size={20} />
+
+                <div>
+                  <strong>Temporary Session</strong>
+                  <p>
+                    Your dress will not be published
+                    in the portal. Download results
+                    before the session expires.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="tryon-primary-button"
+                disabled={saving}
+                onClick={startTemporaryTryOn}
+              >
+                {saving ? (
+                  <LoaderCircle
+                    size={18}
+                    className="custom-spinner"
+                  />
+                ) : (
+                  <Sparkles size={18} />
+                )}
+
+                {saving
+                  ? "Starting Generation..."
+                  : "Generate AI Try-On"}
+
+                {!saving && (
                   <ArrowRight size={18} />
-                </>
-              )}
-            </button>
-          </section>
+                )}
+              </button>
 
-          <aside className="custom-guide-panel">
-            <div className="custom-guide-icon">
-              <ImagePlus size={26} />
+              <button
+                type="button"
+                className="tryon-reset-button"
+                disabled={saving}
+                onClick={() => {
+                  setDressFile(null);
+                  setPhotos({
+                    front: null,
+                    left: null,
+                    right: null,
+                    back: null,
+                  });
+                  setError("");
+                }}
+              >
+                <RotateCcw size={15} />
+                Clear Selected Images
+              </button>
             </div>
+          )}
 
-            <h2>Get the Best Results</h2>
-
-            <p>
-              A high-quality garment reference helps
-              the AI reproduce the original design
-              more accurately.
-            </p>
-
-            <div className="custom-guide-list">
-              <div>
-                <CheckCircle2 size={18} />
-                <span>
-                  Use a clear, well-lit garment image.
-                </span>
-              </div>
-
-              <div>
-                <CheckCircle2 size={18} />
-                <span>
-                  Make sure the complete dress is visible.
-                </span>
-              </div>
-
-              <div>
-                <CheckCircle2 size={18} />
-                <span>
-                  Avoid blurry or heavily edited photos.
-                </span>
-              </div>
-
-              <div>
-                <CheckCircle2 size={18} />
-                <span>
-                  Prefer a simple background.
-                </span>
-              </div>
+          {successMessage && (
+            <div
+              role="status"
+              className="tryon-helper-text"
+              style={{ marginTop: 16 }}
+            >
+              <CheckCircle2
+                size={17}
+                style={{
+                  display: "inline",
+                  marginRight: 8,
+                }}
+              />
+              {successMessage}
             </div>
+          )}
 
-            <div className="custom-next-step">
-              <strong>What happens next?</strong>
-              <p>
-                After saving your dress, you'll upload
-                four photographs of yourself. The AI
-                will use your dress as the reference
-                for the try-on results.
-              </p>
+          {error && (
+            <div
+              className="custom-error"
+              role="alert"
+              style={{ whiteSpace: "pre-line" }}
+            >
+              {error}
             </div>
-          </aside>
+          )}
         </div>
       </main>
     </div>

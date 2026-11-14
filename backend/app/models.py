@@ -1,3 +1,4 @@
+
 import uuid
 
 from sqlalchemy import (
@@ -5,6 +6,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -15,6 +17,10 @@ from sqlalchemy.sql import func
 
 from app.database import Base
 
+
+# =========================================================
+# CATEGORY
+# =========================================================
 
 class Category(Base):
     __tablename__ = "categories"
@@ -47,6 +53,10 @@ class Category(Base):
     )
 
 
+# =========================================================
+# DESIGN
+# =========================================================
+
 class Design(Base):
     __tablename__ = "designs"
 
@@ -58,7 +68,10 @@ class Design(Base):
 
     category_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("categories.id", ondelete="CASCADE"),
+        ForeignKey(
+            "categories.id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
     )
 
@@ -87,14 +100,15 @@ class Design(Base):
         Boolean,
         default=True,
     )
+
     pdf_name = Column(
-    Text,
-    nullable=True,
+        Text,
+        nullable=True,
     )
 
     pdf_page = Column(
-    Integer,
-    nullable=True,
+        Integer,
+        nullable=True,
     )
 
     created_at = Column(
@@ -102,6 +116,15 @@ class Design(Base):
         server_default=func.now(),
     )
 
+    trashed_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+
+# =========================================================
+# GENERATION JOB
+# =========================================================
 
 class GenerationJob(Base):
     __tablename__ = "generation_jobs"
@@ -181,4 +204,103 @@ class GenerationJob(Base):
     completed_at = Column(
         DateTime(timezone=True),
         nullable=True,
+    )
+
+
+# =========================================================
+# STEP 10 - GEMINI API USAGE MONITORING
+# =========================================================
+
+class GeminiAPIUsage(Base):
+    __tablename__ = "gemini_api_usage"
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    job_id = Column(
+        UUID(as_uuid=True),
+        nullable=True,
+    )
+
+
+    image_output_tokens = Column(
+        Integer,
+        nullable=True,
+    )
+
+    text_output_tokens = Column(
+        Integer,
+        nullable=True,
+    )
+
+    thinking_tokens = Column(
+        Integer,
+        nullable=True,
+    )
+
+    model_name = Column(
+        String(150),
+        nullable=False,
+    )
+
+    view_name = Column(
+        String(30),
+        nullable=True,
+    )
+
+    attempt_number = Column(
+        Integer,
+        nullable=False,
+        default=1,
+    )
+
+    status = Column(
+        String(30),
+        nullable=False,
+    )
+
+    input_tokens = Column(
+        Integer,
+        nullable=True,
+    )
+
+    output_tokens = Column(
+        Integer,
+        nullable=True,
+    )
+
+    total_tokens = Column(
+        Integer,
+        nullable=True,
+    )
+
+    duration_ms = Column(
+        Integer,
+        nullable=True,
+    )
+
+    error_code = Column(
+        String(100),
+        nullable=True,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_gemini_api_usage_created_at",
+            "created_at",
+        ),
+        Index(
+            "ix_gemini_api_usage_model_created",
+            "model_name",
+            "created_at",
+        ),
     )

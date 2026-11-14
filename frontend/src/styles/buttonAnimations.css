@@ -1,0 +1,363 @@
+
+/* ===========================================
+   FASHION FIT - PREMIUM UI EFFECTS
+   Theme: White, charcoal, luxury orange
+   =========================================== */
+
+:root {
+  --premium-orange: #f97316;
+  --premium-orange-dark: #ea580c;
+  --premium-orange-light: #fff1e6;
+  --premium-ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+/* ===========================================
+   BUTTON INTERACTIONS
+   =========================================== */
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled) {
+  transition:
+    background-color 260ms ease,
+    border-color 260ms ease,
+    color 260ms ease,
+    box-shadow 320ms var(--premium-ease),
+    filter 260ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button:not(:disabled):hover {
+    filter: brightness(1.035);
+  }
+}
+
+button:not(:disabled):active {
+  filter: brightness(.96);
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--premium-orange);
+  outline-offset: 3px;
+}
+
+/* Premium movement is restricted to ordinary
+   buttons so positioned arrows and other controls
+   keep their original transforms. */
+
+.dress-preview-primary-button,
+.dress-preview-secondary-button,
+.fashion-submit-button,
+.fashion-login-button {
+  transition:
+    transform 280ms var(--premium-ease),
+    box-shadow 280ms var(--premium-ease),
+    background-color 250ms ease,
+    color 250ms ease !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dress-preview-primary-button:hover,
+  .dress-preview-secondary-button:hover,
+  .fashion-submit-button:hover,
+  .fashion-login-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .12);
+  }
+}
+
+.dress-preview-primary-button:active,
+.dress-preview-secondary-button:active,
+.fashion-submit-button:active,
+.fashion-login-button:active {
+  transform: translateY(0) scale(.96);
+}
+
+/* ===========================================
+   BUTTON RIPPLE
+   =========================================== */
+
+button.fashion-ripple-enabled {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.fashion-button-ripple {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+
+  width: 20px;
+  height: 20px;
+
+  background: rgba(255, 255, 255, .42);
+  border-radius: 50%;
+
+  pointer-events: none;
+
+  transform: translate(-50%, -50%) scale(0);
+
+  animation: premiumRipple 650ms
+    cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+@keyframes premiumRipple {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: .8;
+  }
+
+  100% {
+    transform:
+      translate(-50%, -50%)
+      scale(var(--ripple-scale, 20));
+    opacity: 0;
+  }
+}
+
+/* ===========================================
+   CLICK FEEDBACK
+   =========================================== */
+
+.fashion-premium-click {
+  animation: premiumClickGlow 480ms ease-out;
+}
+
+@keyframes premiumClickGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(249,115,22,.30);
+  }
+
+  45% {
+    box-shadow:
+      0 0 0 5px rgba(249,115,22,.15),
+      0 7px 20px rgba(249,115,22,.18);
+  }
+
+  100% {
+    box-shadow: 0 0 0 10px rgba(249,115,22,0);
+  }
+}
+
+/* ===========================================
+   COMPACT DRESS CARDS
+   =========================================== */
+
+.compact-dress-grid .design-card {
+  position: relative;
+
+  transition:
+    transform 400ms var(--premium-ease),
+    box-shadow 400ms var(--premium-ease),
+    border-color 300ms ease !important;
+
+  transform-origin: center;
+  backface-visibility: hidden;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .compact-dress-grid .design-card:hover {
+    transform: translateY(-6px);
+
+    border-color: rgba(249,115,22,.55);
+
+    box-shadow:
+      0 16px 36px rgba(25,25,25,.10),
+      0 0 0 1px rgba(249,115,22,.06);
+  }
+}
+
+/* Image zoom inside card */
+
+.compact-dress-grid .design-image {
+  transition:
+    transform 650ms var(--premium-ease),
+    filter 400ms ease !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .compact-dress-grid .design-card:hover .design-image {
+    transform: scale(1.055);
+    filter: contrast(1.035) saturate(1.04);
+  }
+}
+
+/* Small highlight around hovered card */
+
+.compact-dress-grid .design-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  border-radius: inherit;
+  border: 1px solid transparent;
+
+  box-shadow: inset 0 0 0 0 rgba(249,115,22,0);
+
+  pointer-events: none;
+
+  transition:
+    border-color 350ms ease,
+    box-shadow 350ms ease;
+}
+
+.compact-dress-grid .design-card:hover::after {
+  border-color: rgba(249,115,22,.32);
+  box-shadow:
+    inset 0 0 0 1px rgba(249,115,22,.07);
+}
+
+/* ===========================================
+   DRESS PREVIEW MODAL
+   =========================================== */
+
+.dress-preview-backdrop {
+  animation: premiumBackdropIn 280ms ease-out both;
+}
+
+.dress-preview-modal {
+  animation: premiumModalReveal 420ms
+    var(--premium-ease) both;
+}
+
+@keyframes premiumBackdropIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+
+  to {
+    opacity: 1;
+    backdrop-filter: blur(10px);
+  }
+}
+
+@keyframes premiumModalReveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(.955);
+    filter: blur(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Preview image entrance */
+
+.dress-preview-full-image {
+  animation: premiumImageReveal 500ms
+    var(--premium-ease) both;
+}
+
+@keyframes premiumImageReveal {
+  from {
+    opacity: 0;
+    transform: scale(.965);
+    filter: blur(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Preview arrows retain their center positioning */
+
+.dress-preview-arrow {
+  transition:
+    background-color 220ms ease,
+    color 220ms ease,
+    box-shadow 250ms ease !important;
+}
+
+.dress-preview-arrow:hover {
+  box-shadow:
+    0 6px 20px rgba(249,115,22,.25);
+}
+
+/* ===========================================
+   INPUTS AND SEARCH FIELDS
+   =========================================== */
+
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  transition:
+    border-color 260ms ease,
+    box-shadow 260ms ease,
+    background-color 260ms ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  border-color: var(--premium-orange);
+  box-shadow:
+    0 0 0 3px rgba(249,115,22,.10);
+}
+
+/* ===========================================
+   SCROLL REVEAL
+   =========================================== */
+
+.premium-reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  filter: blur(4px);
+
+  transition:
+    opacity 650ms var(--premium-ease),
+    transform 650ms var(--premium-ease),
+    filter 650ms var(--premium-ease);
+}
+
+.premium-reveal.premium-visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* ===========================================
+   ACCESSIBILITY
+   =========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .fashion-button-ripple {
+    display: none !important;
+  }
+
+  .premium-reveal,
+  .premium-reveal.premium-visible {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .dress-preview-modal,
+  .dress-preview-backdrop,
+  .dress-preview-full-image,
+  .fashion-premium-click {
+    animation: none !important;
+  }
+
+  .compact-dress-grid .design-card,
+  .compact-dress-grid .design-image {
+    transition: none !important;
+  }
+
+  .compact-dress-grid .design-card:hover,
+  .compact-dress-grid .design-card:hover .design-image {
+    transform: none !important;
+  }
+}

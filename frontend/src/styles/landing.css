@@ -1,0 +1,1589 @@
+﻿
+/* ==============================================
+   FASHION PORTAL - CINEMATIC LANDING PAGE
+   ============================================== */
+
+.fashion-landing {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  padding: 0;
+  margin: 0;
+  background: #000;
+  overflow: clip;
+}
+
+/* ==============================================
+   SCROLL-CONTROLLED FRAME ANIMATION
+   ============================================== */
+
+.fashion-scroll-section {
+  position: relative;
+  width: 100%;
+  height: 650vh;
+  background: #000;
+}
+
+.fashion-sticky-frame {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #000;
+}
+
+.fashion-frame-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  background: #000;
+}
+
+/* ==============================================
+   INTELERA LOGO - TOP LEFT
+   ============================================== */
+
+.fashion-brand {
+  position: fixed;
+  top: 22px;
+  left: 32px;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+}
+
+.fashion-brand-logo {
+  display: block;
+  width: auto;
+  height: 60px;
+  max-width: 190px;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 3px 12px rgba(0,0,0,.7));
+}
+
+/* ==============================================
+   LOGIN BUTTON - TOP RIGHT
+   ============================================== */
+
+.fashion-login-button {
+  position: fixed;
+  top: 25px;
+  right: 35px;
+  z-index: 110;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  min-width: 105px;
+  padding: 12px 24px;
+
+  background: rgba(0,0,0,.58);
+  color: #fff;
+
+  border: 1px solid rgba(255,255,255,.6);
+  border-radius: 30px;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  transition:
+    background .25s ease,
+    border-color .25s ease,
+    color .25s ease,
+    transform .25s ease;
+}
+
+.fashion-login-button:hover {
+  background: #D4A75F;
+  color: #111;
+  border-color: #D4A75F;
+  transform: translateY(-2px);
+}
+
+.fashion-login-button:focus-visible,
+.fashion-submit-button:focus-visible,
+.fashion-close-button:focus-visible {
+  outline: 2px solid #FFD58D;
+  outline-offset: 3px;
+}
+
+/* ==============================================
+   CINEMATIC CAPTION CONTAINER
+   ============================================== */
+
+.fashion-caption-container {
+  position: fixed;
+  left: 5.5%;
+  bottom: 10%;
+  z-index: 90;
+
+  width: min(900px, 89vw);
+  height: 180px;
+
+  pointer-events: none;
+  isolation: isolate;
+}
+
+/* Subtle shading provides readability without
+   creating an obvious rectangular text box. */
+
+.fashion-caption-container::before {
+  content: "";
+  position: absolute;
+  inset: -60px -105px;
+  z-index: -1;
+
+  background: radial-gradient(
+    ellipse at 28% 68%,
+    rgba(0,0,0,.62) 0%,
+    rgba(0,0,0,.36) 44%,
+    rgba(0,0,0,.09) 70%,
+    transparent 88%
+  );
+
+  filter: blur(22px);
+  pointer-events: none;
+}
+
+/* A subtle warm ambient light below the text. */
+
+.fashion-caption-container::after {
+  content: "";
+  position: absolute;
+  bottom: -36px;
+  left: -20px;
+  width: 75%;
+  height: 85px;
+  z-index: -1;
+
+  background: radial-gradient(
+    ellipse,
+    rgba(204,146,64,.14),
+    transparent 75%
+  );
+
+  filter: blur(28px);
+  pointer-events: none;
+}
+
+/* ==============================================
+   CAPTION TYPOGRAPHY
+   ============================================== */
+
+.fashion-cinematic-caption {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+
+  display: block;
+  width: 100%;
+
+  margin: 0;
+  padding: 0;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size: clamp(32px, 3.8vw, 59px);
+  font-weight: 400;
+
+  line-height: 1.24;
+  letter-spacing: -0.027em;
+
+  color: #FFF2D8;
+
+  pointer-events: none;
+}
+
+/* ==============================================
+   ANIMATED INDIVIDUAL WORDS
+   ============================================== */
+
+.fashion-cinematic-word {
+  display: inline-block;
+
+  margin-right: .24em;
+  margin-bottom: .04em;
+
+  white-space: nowrap;
+
+  /* Actual text color is supplied by JS.
+     No transparent background clipping. */
+
+  color: #FFE8BC;
+  -webkit-text-fill-color: currentColor;
+
+  transform-origin: center bottom;
+
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+
+  will-change:
+    opacity,
+    transform,
+    filter;
+}
+
+/* ==============================================
+   LOGIN OVERLAY
+   ============================================== */
+
+.fashion-login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 20px;
+
+  background: rgba(0,0,0,.80);
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ==============================================
+   LOGIN MODAL
+   ============================================== */
+
+.fashion-login-modal {
+  position: relative;
+
+  box-sizing: border-box;
+
+  width: 100%;
+  max-width: 420px;
+
+  padding: 40px 32px;
+
+  background: #141416;
+  color: #fff;
+
+  border: 1px solid #3B3430;
+  border-radius: 18px;
+
+  box-shadow:
+    0 25px 80px rgba(0,0,0,.7);
+}
+
+.fashion-login-modal h2 {
+  margin: 0 0 28px;
+  padding: 0;
+
+  color: #fff;
+
+  font-family: inherit;
+  font-size: 28px;
+  font-weight: 600;
+
+  text-align: center;
+}
+
+.fashion-close-button {
+  position: absolute;
+  top: 15px;
+  right: 18px;
+
+  background: transparent;
+  color: #fff;
+
+  border: none;
+
+  font-size: 28px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.fashion-close-button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.fashion-login-modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fashion-login-modal label {
+  margin-top: 5px;
+
+  color: #EEE;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.fashion-login-modal input {
+  box-sizing: border-box;
+
+  width: 100%;
+  padding: 14px;
+
+  background: #222225;
+  color: #fff;
+
+  border: 1px solid #454548;
+  border-radius: 9px;
+
+  font-family: inherit;
+  font-size: 14px;
+
+  outline: none;
+
+  transition: border-color .2s ease;
+}
+
+.fashion-login-modal input:focus {
+  border-color: #D4A75F;
+}
+
+.fashion-login-modal input::placeholder {
+  color: #999;
+}
+
+.fashion-submit-button {
+  margin-top: 18px;
+  padding: 14px;
+
+  background: #D4A75F;
+  color: #17110D;
+
+  border: none;
+  border-radius: 9px;
+
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: background .2s ease;
+}
+
+.fashion-submit-button:hover:not(:disabled) {
+  background: #F0C986;
+}
+
+.fashion-submit-button:disabled {
+  opacity: .65;
+  cursor: wait;
+}
+
+.fashion-login-error {
+  margin: 5px 0 0;
+
+  color: #FF9D9D;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ==============================================
+   TABLET
+   ============================================== */
+
+@media (max-width: 900px) {
+  .fashion-caption-container {
+    left: 5%;
+    bottom: 10%;
+    width: 90vw;
+    height: 155px;
+  }
+
+  .fashion-cinematic-caption {
+    font-size: clamp(29px, 4.7vw, 45px);
+  }
+
+  .fashion-brand-logo {
+    height: 52px;
+    max-width: 160px;
+  }
+}
+
+/* ==============================================
+   MOBILE
+   ============================================== */
+
+@media (max-width: 600px) {
+  .fashion-scroll-section {
+    height: 450vh;
+  }
+
+  .fashion-brand {
+    top: 14px;
+    left: 14px;
+  }
+
+  .fashion-brand-logo {
+    height: 42px;
+    max-width: 125px;
+  }
+
+  .fashion-login-button {
+    top: 16px;
+    right: 16px;
+
+    min-width: 85px;
+    padding: 10px 18px;
+
+    font-size: 13px;
+  }
+
+  .fashion-caption-container {
+    left: 6%;
+    bottom: 11%;
+
+    width: 88vw;
+    height: 165px;
+  }
+
+  .fashion-cinematic-caption {
+    font-size: clamp(25px, 6vw, 36px);
+    line-height: 1.28;
+    letter-spacing: -.015em;
+  }
+
+  .fashion-cinematic-word {
+    margin-right: .20em;
+  }
+
+  .fashion-caption-container::before {
+    inset: -30px -35px;
+    filter: blur(19px);
+  }
+
+  .fashion-login-modal {
+    padding: 36px 24px;
+  }
+}
+
+/* ==============================================
+   REDUCED MOTION
+   ============================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .fashion-scroll-section {
+    height: 100vh;
+  }
+
+  .fashion-cinematic-word {
+    will-change: auto;
+    transition: none;
+  }
+
+  .fashion-login-button {
+    transition: none;
+  }
+}
+
+/* ==========================================
+   INTELERA LANDING LOGO - WHITE BACKGROUND
+   ========================================== */
+
+.fashion-landing .fashion-brand {
+  position: fixed;
+  top: 22px;
+  left: 32px;
+  z-index: 110;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 12px 18px;
+
+  background: #ffffff !important;
+  border: 1px solid rgba(255,255,255,0.9);
+  border-radius: 14px;
+
+  box-shadow:
+    0 8px 28px rgba(0,0,0,0.22);
+
+  backdrop-filter: none;
+}
+
+/* Keep the original logo colors */
+
+.fashion-landing .fashion-brand-logo {
+  display: block;
+
+  width: 165px;
+  max-width: 100%;
+  height: 55px;
+
+  object-fit: contain;
+
+  background: transparent !important;
+  filter: none !important;
+}
+
+/* Subtle hover animation */
+
+@media (hover: hover) and (pointer: fine) {
+  .fashion-landing .fashion-brand {
+    transition:
+      transform 300ms ease,
+      box-shadow 300ms ease;
+  }
+
+  .fashion-landing .fashion-brand:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 12px 32px rgba(0,0,0,0.3);
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  .fashion-landing .fashion-brand {
+    top: 14px;
+    left: 14px;
+    padding: 8px 12px;
+    border-radius: 10px;
+  }
+
+  .fashion-landing .fashion-brand-logo {
+    width: 115px;
+    height: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fashion-landing .fashion-brand {
+    transition: none;
+  }
+
+  .fashion-landing .fashion-brand:hover {
+    transform: none;
+  }
+}
+
+/* COMPACT INTELERA LOGO - FINAL OVERRIDE */
+
+.fashion-landing .fashion-brand {
+  padding: 5px 8px !important;
+  border-radius: 8px !important;
+  width: fit-content !important;
+  height: auto !important;
+}
+
+.fashion-landing .fashion-brand-logo {
+  width: 140px !important;
+  height: 42px !important;
+  max-width: 100% !important;
+  object-fit: contain !important;
+}
+
+@media (max-width: 600px) {
+  .fashion-landing .fashion-brand {
+    padding: 4px 6px !important;
+  }
+
+  .fashion-landing .fashion-brand-logo {
+    width: 110px !important;
+    height: 34px !important;
+  }
+}
+
+
+/* INTELERA - LARGER LOGO WITH COMPACT WHITE BACKGROUND */
+
+.fashion-landing .fashion-brand {
+  padding: 4px 6px !important;
+  width: fit-content !important;
+  height: auto !important;
+  border-radius: 8px !important;
+}
+
+.fashion-landing .fashion-brand-logo {
+  width: 180px !important;
+  height: 54px !important;
+  max-width: none !important;
+  object-fit: contain !important;
+}
+
+@media (max-width: 600px) {
+  .fashion-landing .fashion-brand {
+    padding: 3px 5px !important;
+  }
+
+  .fashion-landing .fashion-brand-logo {
+    width: 135px !important;
+    height: 42px !important;
+  }
+}
+
+
+/* INTELERA LOGO - MINIMAL WHITE BACKGROUND */
+
+.fashion-landing .fashion-brand {
+  padding: 1px 2px !important;
+  border: none !important;
+  border-radius: 5px !important;
+  width: fit-content !important;
+  height: auto !important;
+  background: #ffffff !important;
+}
+
+.fashion-landing .fashion-brand-logo {
+  width: 180px !important;
+  height: 54px !important;
+  max-width: none !important;
+  object-fit: contain !important;
+}
+
+@media (max-width: 600px) {
+  .fashion-landing .fashion-brand {
+    padding: 1px 2px !important;
+  }
+
+  .fashion-landing .fashion-brand-logo {
+    width: 135px !important;
+    height: 42px !important;
+  }
+}
+
+
+
+/* PERFECTMESS_HOME_IMAGE_START */
+
+.perfectmess-home-intro {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #080808;
+}
+
+.perfectmess-home-intro img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.perfectmess-home-intro::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.08),
+    transparent 35%,
+    rgba(0,0,0,0.12)
+  );
+}
+
+@media (max-width: 600px) {
+  .perfectmess-home-intro img {
+    object-position: 55% center;
+  }
+}
+
+/* PERFECTMESS_HOME_IMAGE_END */
+
+/* FRAME_REPAIR_START */
+
+/* Main page must allow vertical scrolling */
+
+.fashion-landing {
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow: visible !important;
+}
+
+/* Opening image */
+
+.fashion-landing .perfectmess-home-intro {
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+  background: #080808;
+}
+
+.fashion-landing .perfectmess-home-intro img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center;
+}
+
+/* Animation scroll area */
+
+.fashion-landing .fashion-scroll-section {
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  height: 650vh !important;
+  min-height: 650vh !important;
+  overflow: visible !important;
+  background: #000;
+}
+
+/* Keep canvas visible while scrolling */
+
+.fashion-landing
+.fashion-scroll-section
+.fashion-sticky-frame {
+  display: block !important;
+  position: sticky !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+  background: #000;
+}
+
+/* Canvas must fill the visible screen */
+
+.fashion-landing
+.fashion-scroll-section
+.fashion-frame-canvas {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: #000;
+}
+
+/* FRAME_REPAIR_END */
+
+/* PERFECTMESS_HOME_COPY_START */
+
+.perfectmess-home-intro {
+  position: relative;
+  overflow: hidden;
+}
+
+.perfectmess-home-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 70px 72px;
+  pointer-events: none;
+
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.22) 35%,
+    rgba(0, 0, 0, 0.06) 65%,
+    rgba(0, 0, 0, 0.02) 100%
+  );
+}
+
+.perfectmess-home-copy {
+  max-width: 640px;
+  color: #ffffff;
+  animation: perfectmessFadeUp 900ms ease-out both;
+}
+
+.perfectmess-home-tag {
+  display: inline-block;
+  margin-bottom: 16px;
+  padding: 8px 14px;
+
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+
+  color: #f5d8b1;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1;
+  text-transform: uppercase;
+
+  backdrop-filter: blur(10px);
+}
+
+.perfectmess-home-title {
+  margin: 0 0 16px;
+  color: #ffffff;
+  font-size: clamp(42px, 6vw, 78px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -1.8px;
+  text-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
+}
+
+.perfectmess-home-subtitle {
+  margin: 0;
+  max-width: 580px;
+
+  color: rgba(255, 255, 255, 0.92);
+  font-size: clamp(16px, 2vw, 22px);
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0.2px;
+
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
+}
+
+@keyframes perfectmessFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .perfectmess-home-overlay {
+    padding: 42px 28px;
+  }
+
+  .perfectmess-home-copy {
+    max-width: 100%;
+  }
+
+  .perfectmess-home-title {
+    margin-bottom: 12px;
+  }
+
+  .perfectmess-home-subtitle {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 600px) {
+  .perfectmess-home-overlay {
+    padding: 28px 18px;
+    align-items: flex-end;
+  }
+
+  .perfectmess-home-tag {
+    margin-bottom: 12px;
+    padding: 7px 12px;
+    font-size: 11px;
+    letter-spacing: 1.4px;
+  }
+
+  .perfectmess-home-title {
+    font-size: 34px;
+  }
+
+  .perfectmess-home-subtitle {
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .perfectmess-home-copy {
+    animation: none;
+  }
+}
+
+/* PERFECTMESS_HOME_COPY_END */
+
+/* FASHIONFIT_TEXT_COLOR_START */
+
+/* Stronger dark gradient behind the text */
+.fashion-landing .perfectmess-home-overlay {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.78) 0%,
+    rgba(0, 0, 0, 0.55) 35%,
+    rgba(0, 0, 0, 0.12) 70%,
+    transparent 100%
+  ) !important;
+}
+
+/* Ensure the entire text block is visible */
+.fashion-landing .perfectmess-home-copy {
+  opacity: 1;
+  color: #ffffff !important;
+  position: relative;
+  z-index: 2;
+}
+
+/* PREMIUM MENSWEAR label */
+.fashion-landing .perfectmess-home-tag {
+  color: #D9B477 !important;
+  -webkit-text-fill-color: #D9B477 !important;
+
+  background: rgba(12, 10, 8, 0.62) !important;
+  border: 1px solid rgba(217, 180, 119, 0.55) !important;
+
+  text-shadow: none !important;
+}
+
+/* FashionFit heading */
+.fashion-landing .perfectmess-home-title {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+
+  opacity: 1 !important;
+
+  text-shadow:
+    0 3px 12px rgba(0, 0, 0, 0.85),
+    0 8px 32px rgba(0, 0, 0, 0.55) !important;
+}
+
+/* Description */
+.fashion-landing .perfectmess-home-subtitle {
+  color: #F5EBDD !important;
+  -webkit-text-fill-color: #F5EBDD !important;
+
+  opacity: 1 !important;
+
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.95),
+    0 4px 20px rgba(0, 0, 0, 0.65) !important;
+}
+
+/* Mobile gradient */
+@media (max-width: 600px) {
+  .fashion-landing .perfectmess-home-overlay {
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.88) 0%,
+      rgba(0, 0, 0, 0.45) 45%,
+      transparent 85%
+    ) !important;
+  }
+}
+
+/* FASHIONFIT_TEXT_COLOR_END */
+
+/* FASHIONFIT_BRIGHT_WHITE_START */
+
+.fashion-landing .perfectmess-home-title {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  opacity: 1 !important;
+
+  text-shadow:
+    0 0 2px rgba(255,255,255,0.95),
+    0 0 8px rgba(255,255,255,0.35),
+    0 4px 18px rgba(0,0,0,0.95),
+    0 10px 34px rgba(0,0,0,0.72) !important;
+}
+
+.fashion-landing .perfectmess-home-subtitle {
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  opacity: 1 !important;
+
+  text-shadow:
+    0 0 1px rgba(255,255,255,0.75),
+    0 2px 10px rgba(0,0,0,0.95),
+    0 6px 24px rgba(0,0,0,0.7) !important;
+}
+
+.fashion-landing .perfectmess-home-copy {
+  opacity: 1 !important;
+}
+
+/* PURE_WHITE_TEXT_START */
+
+/* Make the text container fully opaque */
+.fashion-landing .perfectmess-home-copy {
+    opacity: 1 !important;
+    filter: none !important;
+    mix-blend-mode: normal !important;
+}
+
+/* FashionFit heading - fully bright white */
+.fashion-landing .perfectmess-home-copy .perfectmess-home-title {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    opacity: 1 !important;
+    filter: none !important;
+
+    text-shadow:
+        0 2px 5px rgba(0,0,0,0.95),
+        0 4px 18px rgba(0,0,0,0.85) !important;
+}
+
+/* Description - fully bright white */
+.fashion-landing .perfectmess-home-copy .perfectmess-home-subtitle {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    opacity: 1 !important;
+    filter: none !important;
+
+    text-shadow:
+        0 2px 6px rgba(0,0,0,0.95),
+        0 4px 16px rgba(0,0,0,0.8) !important;
+}
+
+/* Premium Menswear label - bright white */
+.fashion-landing .perfectmess-home-copy .perfectmess-home-tag {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    opacity: 1 !important;
+}
+
+/* PURE_WHITE_TEXT_END */
+
+/* FASHION_SCROLL_HINT_START */
+
+.fashion-landing .perfectmess-home-intro {
+    position: relative !important;
+}
+
+.fashion-landing .fashion-scroll-hint {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    z-index: 15;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    width: max-content;
+    max-width: calc(100% - 32px);
+
+    padding: 10px 22px;
+
+    background: rgba(0, 0, 0, 0.52);
+    border: 1px solid rgba(232, 196, 139, 0.35);
+    border-radius: 30px;
+
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.32);
+
+    pointer-events: none;
+}
+
+.fashion-landing .fashion-scroll-hint-arrow {
+    display: block;
+
+    color: #E8C48B;
+    font-size: 24px;
+    line-height: 1;
+
+    animation: fashionScrollArrow 1.5s ease-in-out infinite;
+}
+
+.fashion-landing .fashion-scroll-hint-text {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+
+    white-space: nowrap;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.85);
+}
+
+@keyframes fashionScrollArrow {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+@media (max-width: 600px) {
+    .fashion-landing .fashion-scroll-hint {
+        bottom: 16px;
+        padding: 9px 14px;
+    }
+
+    .fashion-landing .fashion-scroll-hint-text {
+        font-size: 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fashion-landing .fashion-scroll-hint-arrow {
+        animation: none;
+    }
+}
+
+/* FASHION_SCROLL_HINT_END */
+
+/* PLAIN_SCROLL_HINT_START */
+
+/* Remove glass background and borders completely */
+
+.fashion-landing .perfectmess-home-intro .fashion-scroll-hint {
+    position: absolute !important;
+    bottom: 30px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+
+    width: max-content !important;
+    max-width: calc(100% - 24px) !important;
+    height: auto !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+
+    opacity: 1 !important;
+    filter: none !important;
+    z-index: 20 !important;
+    pointer-events: none;
+}
+
+/* Sharp white arrow */
+
+.fashion-landing .perfectmess-home-intro .fashion-scroll-hint-arrow {
+    display: block !important;
+
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+
+    font-family: Arial, sans-serif !important;
+    font-size: 30px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+
+    opacity: 1 !important;
+    filter: none !important;
+
+    text-shadow: 0 2px 8px rgba(0,0,0,0.9) !important;
+    animation: fashionScrollArrow 1.5s ease-in-out infinite;
+}
+
+/* Fully bright white text */
+
+.fashion-landing .perfectmess-home-intro .fashion-scroll-hint-text {
+    display: block !important;
+
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 1.4 !important;
+    letter-spacing: 0.6px !important;
+
+    opacity: 1 !important;
+    filter: none !important;
+    text-align: center !important;
+
+    text-shadow:
+        0 2px 5px rgba(0,0,0,0.95),
+        0 4px 12px rgba(0,0,0,0.8) !important;
+}
+
+/* Mobile adjustment */
+
+@media (max-width: 600px) {
+    .fashion-landing .perfectmess-home-intro .fashion-scroll-hint {
+        bottom: 20px !important;
+    }
+
+    .fashion-landing .perfectmess-home-intro .fashion-scroll-hint-text {
+        font-size: 12px !important;
+        white-space: normal !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fashion-landing .perfectmess-home-intro .fashion-scroll-hint-arrow {
+        animation: none !important;
+    }
+}
+
+/* PLAIN_SCROLL_HINT_END */
+
+/* PREMIUM_SCROLL_START */
+
+/* Premium scroll indicator - no glass box */
+.fashion-landing .perfectmess-home-intro .fashion-scroll-hint {
+    position: absolute !important;
+    bottom: 65px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 13px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+
+    opacity: 1 !important;
+    z-index: 30 !important;
+    pointer-events: none !important;
+}
+
+/* Taller, sharper golden arrow */
+.fashion-landing .perfectmess-home-intro .fashion-scroll-hint-arrow {
+    display: block !important;
+
+    color: #F4C779 !important;
+    -webkit-text-fill-color: #F4C779 !important;
+
+    font-family: Arial, sans-serif !important;
+    font-size: 44px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+
+    text-shadow:
+        0 0 10px rgba(244,199,121,0.35),
+        0 3px 10px rgba(0,0,0,0.8) !important;
+
+    animation: premiumScrollFloat 1.7s ease-in-out infinite !important;
+}
+
+/* Premium golden text */
+.fashion-landing .perfectmess-home-intro .fashion-scroll-hint-text {
+    display: block !important;
+
+    color: #F4C779 !important;
+    -webkit-text-fill-color: #F4C779 !important;
+
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    letter-spacing: 1px !important;
+    line-height: 1.5 !important;
+
+    opacity: 1 !important;
+    text-align: center !important;
+
+    text-shadow:
+        0 0 9px rgba(244,199,121,0.25),
+        0 3px 12px rgba(0,0,0,0.95) !important;
+}
+
+/* Smooth floating arrow */
+@keyframes premiumScrollFloat {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    .fashion-landing .perfectmess-home-intro .fashion-scroll-hint {
+        bottom: 35px !important;
+        gap: 9px !important;
+    }
+
+    .fashion-landing .perfectmess-home-intro .fashion-scroll-hint-arrow {
+        font-size: 34px !important;
+    }
+
+    .fashion-landing .perfectmess-home-intro .fashion-scroll-hint-text {
+        font-size: 12px !important;
+        letter-spacing: 0.5px !important;
+        white-space: normal !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fashion-landing .perfectmess-home-intro .fashion-scroll-hint-arrow {
+        animation: none !important;
+    }
+}
+
+/* PREMIUM_SCROLL_END */
+
+/* SCROLL_OVERLAP_FIX_START */
+
+/* Place indicator at bottom-right, away from left-side title */
+
+.fashion-landing .perfectmess-home-intro .fashion-scroll-hint {
+    position: absolute !important;
+
+    left: auto !important;
+    right: 48px !important;
+    bottom: 38px !important;
+
+    transform: none !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    width: max-content !important;
+    max-width: 38% !important;
+
+    gap: 8px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+
+    z-index: 40 !important;
+}
+
+/* Gold arrow */
+
+.fashion-landing .perfectmess-home-intro .fashion-scroll-hint-arrow {
+    font-size: 36px !important;
+    color: #F4C779 !important;
+    -webkit-text-fill-color: #F4C779 !important;
+}
+
+/* Gold caption */
+
+.fashion-landing .perfectmess-home-intro .fashion-scroll-hint-text {
+    color: #F4C779 !important;
+    -webkit-text-fill-color: #F4C779 !important;
+
+    font-size: 13px !important;
+    font-weight: 700 !important;
+
+    text-align: center !important;
+    line-height: 1.4 !important;
+    white-space: normal !important;
+}
+
+/* Responsive positioning */
+
+@media (max-width: 900px) {
+    .fashion-landing .perfectmess-home-intro .fashion-scroll-hint {
+        right: 22px !important;
+        bottom: 20px !important;
+        max-width: 45% !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .fashion-landing .perfectmess-home-intro .fashion-scroll-hint {
+        right: 14px !important;
+        bottom: 14px !important;
+        max-width: 46% !important;
+    }
+
+    .fashion-landing .perfectmess-home-intro .fashion-scroll-hint-arrow {
+        font-size: 28px !important;
+    }
+
+    .fashion-landing .perfectmess-home-intro .fashion-scroll-hint-text {
+        font-size: 10px !important;
+        letter-spacing: 0 !important;
+    }
+}
+
+/* SCROLL_OVERLAP_FIX_END */
+
+/* CENTER_SCROLL_START */
+
+/* Scroll indicator at bottom center */
+.fashion-landing .perfectmess-home-intro .fashion-scroll-hint {
+    position: absolute !important;
+
+    left: 50% !important;
+    right: auto !important;
+    bottom: 18px !important;
+
+    transform: translateX(-50%) !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    width: max-content !important;
+    max-width: calc(100% - 24px) !important;
+
+    gap: 5px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+
+    z-index: 50 !important;
+}
+
+/* Golden arrow */
+.fashion-landing .perfectmess-home-intro .fashion-scroll-hint-arrow {
+    color: #F4C779 !important;
+    -webkit-text-fill-color: #F4C779 !important;
+
+    font-size: 30px !important;
+    line-height: 1 !important;
+}
+
+/* Premium gold text */
+.fashion-landing .perfectmess-home-intro .fashion-scroll-hint-text {
+    color: #F4C779 !important;
+    -webkit-text-fill-color: #F4C779 !important;
+
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    white-space: normal !important;
+    line-height: 1.3 !important;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    .fashion-landing .perfectmess-home-intro .fashion-scroll-hint {
+        bottom: 12px !important;
+    }
+
+    .fashion-landing .perfectmess-home-intro .fashion-scroll-hint-text {
+        font-size: 11px !important;
+    }
+}
+
+/* CENTER_SCROLL_END */
+
+/* FASHIONFIT_SEAMLESS_CSS_START */
+
+/* One continuous, full-screen visual experience */
+
+.fashion-landing .fashion-scroll-section {
+    position: relative !important;
+    height: 650vh !important;
+    min-height: 650vh !important;
+    background: #050505 !important;
+}
+
+.fashion-landing
+.fashion-scroll-section
+.fashion-sticky-frame {
+    position: sticky !important;
+    top: 0 !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    isolation: isolate;
+}
+
+/* Animation underneath the opening image */
+
+.fashion-landing
+.fashion-scroll-section
+.fashion-frame-canvas {
+    position: absolute !important;
+    inset: 0 !important;
+
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+
+    z-index: 1 !important;
+}
+
+/* Existing opening image becomes an overlay */
+
+.fashion-landing
+.fashion-scroll-section
+.fashion-sticky-frame
+.perfectmess-home-intro {
+    position: absolute !important;
+    inset: 0 !important;
+
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+
+    min-height: 0 !important;
+    max-height: none !important;
+
+    overflow: hidden !important;
+
+    z-index: 5 !important;
+
+    pointer-events: none !important;
+    will-change: opacity, transform;
+
+    transform-origin: center center;
+}
+
+/* Existing image remains unchanged */
+
+.fashion-landing
+.fashion-scroll-section
+.perfectmess-home-intro img {
+    display: block !important;
+
+    width: 100% !important;
+    height: 100% !important;
+
+    object-fit: cover !important;
+    object-position: center !important;
+}
+
+/* Keep text and arrow above the image */
+
+.fashion-landing
+.fashion-scroll-section
+.perfectmess-home-overlay {
+    z-index: 6 !important;
+}
+
+.fashion-landing
+.fashion-scroll-section
+.fashion-scroll-hint {
+    z-index: 7 !important;
+}
+
+/* FASHIONFIT_SEAMLESS_CSS_END */
+

@@ -52,3 +52,79 @@ backend/catalog-images/custom/
 *.tmp
 *.temp
 .cache/
+
+# ===== FashionFit GitHub Safety Rules =====
+
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+
+# Node environments and builds
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+
+# Backups and temporary source copies
+*_backup/
+*_backups/
+src_backup/
+src_before_landing_change/
+_ui_text_backups/
+_popup_backup/
+_hard_delete_backup/
+_safe_delete_update_backup/
+*.bak
+*.bak.*
+*.backup*
+*.before_*
+*.before-*
+
+# Archives and diagnostic exports
+*.zip
+*.7z
+*.rar
+fashionfit-generation-code.txt
+
+# Generated and uploaded content
+generated/
+uploads/
+outputs/
+temp/
+tmp/
+backend/catalog-images/
+backend/catalog-pdfs/
+
+# Local databases
+*.sqlite
+*.sqlite3
+*.db
+
+# Logs and local editor settings
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+
+# Additional timestamped backups
+*.logo_backup_*
+*.white_logo_backup_*

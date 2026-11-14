@@ -1,0 +1,418 @@
+
+/* ============================================
+   FASHION FIT - PREMIUM GLOBAL PORTAL EFFECTS
+   ============================================ */
+
+:root {
+  --portal-accent: #f97316;
+  --portal-accent-dark: #ea580c;
+  --portal-accent-soft: rgba(249, 115, 22, .12);
+  --portal-ease: cubic-bezier(.22, 1, .36, 1);
+  --portal-shadow: 0 12px 32px rgba(20, 20, 20, .08);
+}
+
+/* Only apply effects inside the existing portal.
+   The public landing animation stays unchanged. */
+
+/* ============================================
+   1. SCROLL REVEAL
+   ============================================ */
+
+.premium-ui-enabled .premium-item-reveal {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+  filter: blur(4px);
+
+  transition:
+    opacity 680ms var(--portal-ease),
+    transform 680ms var(--portal-ease),
+    filter 680ms var(--portal-ease);
+
+  transition-delay: var(--premium-delay, 0ms);
+}
+
+.premium-ui-enabled
+.premium-item-reveal.premium-item-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  filter: blur(0);
+}
+
+/* ============================================
+   2. DRESS COLLECTION CARDS
+   ============================================ */
+
+.premium-ui-enabled .design-card {
+  transform-origin: center;
+  backface-visibility: hidden;
+
+  transition:
+    transform 420ms var(--portal-ease),
+    box-shadow 420ms var(--portal-ease),
+    border-color 280ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .premium-ui-enabled
+  .design-card.premium-item-visible:hover {
+    transform: translateY(-6px);
+    border-color: rgba(249, 115, 22, .6);
+
+    box-shadow:
+      0 18px 36px rgba(30, 30, 30, .11),
+      0 0 0 1px rgba(249, 115, 22, .08);
+  }
+}
+
+.premium-ui-enabled .design-image-wrapper {
+  overflow: hidden;
+}
+
+.premium-ui-enabled .design-image {
+  transition:
+    transform 650ms var(--portal-ease),
+    filter 450ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .premium-ui-enabled
+  .design-card:hover .design-image {
+    transform: scale(1.045);
+    filter: saturate(1.06) contrast(1.025);
+  }
+}
+
+/* ============================================
+   3. CATEGORY CARDS
+   ============================================ */
+
+.premium-ui-enabled .category-card {
+  position: relative;
+
+  transition:
+    box-shadow 320ms var(--portal-ease),
+    border-color 260ms ease,
+    background-color 260ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .premium-ui-enabled
+  .category-card.premium-item-visible:hover {
+    border-color: var(--portal-accent);
+    box-shadow: var(--portal-shadow);
+  }
+}
+
+/* ============================================
+   4. CATEGORY NAVIGATION
+   ============================================ */
+
+.premium-ui-enabled .category-tab,
+.premium-ui-enabled .category-button {
+  position: relative;
+
+  transition:
+    color 280ms ease,
+    background-color 280ms ease,
+    border-color 280ms ease;
+}
+
+.premium-ui-enabled
+.category-tab::after,
+.premium-ui-enabled
+.category-button::after {
+  content: "";
+  position: absolute;
+
+  left: 15%;
+  right: 15%;
+  bottom: 0;
+
+  height: 2px;
+
+  background: var(--portal-accent);
+
+  transform: scaleX(0);
+  transform-origin: center;
+
+  transition:
+    transform 320ms var(--portal-ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .premium-ui-enabled
+  .category-tab:hover::after,
+  .premium-ui-enabled
+  .category-button:hover::after {
+    transform: scaleX(1);
+  }
+}
+
+/* ============================================
+   5. FULL IMAGE PREVIEW
+   ============================================ */
+
+.premium-ui-enabled .dress-preview-backdrop {
+  animation:
+    portalBackdropReveal 260ms ease-out both;
+}
+
+.premium-ui-enabled .dress-preview-modal {
+  animation:
+    portalModalReveal 380ms var(--portal-ease)
+    both;
+}
+
+.premium-ui-enabled .dress-preview-full-image {
+  animation:
+    portalImageReveal 450ms var(--portal-ease)
+    both;
+}
+
+@keyframes portalBackdropReveal {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes portalModalReveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(.965);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes portalImageReveal {
+  from {
+    opacity: 0;
+    transform: scale(.97);
+    filter: blur(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+/* ============================================
+   6. GENERATION RESULT CARDS
+   ============================================ */
+
+.premium-ui-enabled .result-card {
+  border-radius: 14px;
+
+  transition:
+    box-shadow 350ms var(--portal-ease),
+    border-color 350ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .premium-ui-enabled
+  .result-card.premium-item-visible:hover {
+    box-shadow: var(--portal-shadow);
+    border-color: rgba(249, 115, 22, .4);
+  }
+}
+
+.premium-ui-enabled .result-card img {
+  transition:
+    filter 420ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .premium-ui-enabled
+  .result-card:hover img {
+    filter: brightness(1.035);
+  }
+}
+
+/* ============================================
+   7. UPLOAD AREAS
+   ============================================ */
+
+.premium-ui-enabled .upload-area,
+.premium-ui-enabled .upload-zone,
+.premium-ui-enabled .dropzone {
+  transition:
+    border-color 300ms ease,
+    background-color 300ms ease,
+    box-shadow 300ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .premium-ui-enabled .upload-area:hover,
+  .premium-ui-enabled .upload-zone:hover,
+  .premium-ui-enabled .dropzone:hover {
+    border-color: var(--portal-accent);
+    background-color: rgba(249, 115, 22, .035);
+
+    box-shadow:
+      0 0 0 4px rgba(249, 115, 22, .055);
+  }
+}
+
+.premium-ui-enabled .upload-area.drag-active,
+.premium-ui-enabled .upload-zone.drag-active,
+.premium-ui-enabled .dropzone.drag-active {
+  border-color: var(--portal-accent);
+  background: rgba(249, 115, 22, .07);
+}
+
+/* ============================================
+   8. COLLECTION MANAGEMENT
+   ============================================ */
+
+.premium-ui-enabled .collection-dashboard,
+.premium-ui-enabled .collection-panel,
+.premium-ui-enabled .management-panel {
+  transition:
+    box-shadow 320ms ease,
+    border-color 320ms ease;
+}
+
+.premium-ui-enabled
+.collection-actions button {
+  transition:
+    background-color 260ms ease,
+    border-color 260ms ease,
+    box-shadow 260ms ease;
+}
+
+/* ============================================
+   9. FORMS AND INPUTS
+   ============================================ */
+
+.premium-ui-enabled
+input:not([type="checkbox"]):not([type="radio"]),
+.premium-ui-enabled textarea,
+.premium-ui-enabled select {
+  transition:
+    border-color 250ms ease,
+    box-shadow 250ms ease,
+    background-color 250ms ease;
+}
+
+.premium-ui-enabled
+input:not([type="checkbox"]):not([type="radio"]):focus,
+.premium-ui-enabled textarea:focus,
+.premium-ui-enabled select:focus {
+  border-color: var(--portal-accent);
+
+  box-shadow:
+    0 0 0 3px rgba(249, 115, 22, .11);
+}
+
+/* ============================================
+   10. PROGRESS INDICATORS
+   ============================================ */
+
+.premium-ui-enabled progress {
+  accent-color: var(--portal-accent);
+}
+
+.premium-ui-enabled .progress-bar,
+.premium-ui-enabled .generation-progress-bar {
+  transition:
+    width 550ms var(--portal-ease);
+}
+
+/* ============================================
+   11. SIDEBAR AND NAVIGATION
+   ============================================ */
+
+.premium-ui-enabled .sidebar a,
+.premium-ui-enabled .sidebar button {
+  transition:
+    color 240ms ease,
+    background-color 240ms ease,
+    border-color 240ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .premium-ui-enabled .sidebar a:hover,
+  .premium-ui-enabled .sidebar button:hover {
+    color: var(--portal-accent);
+  }
+}
+
+/* ============================================
+   12. COMMON MODALS
+   ============================================ */
+
+.premium-ui-enabled .modal-content,
+.premium-ui-enabled .dialog-content {
+  animation:
+    portalModalReveal 360ms var(--portal-ease)
+    both;
+}
+
+/* ============================================
+   13. INTERACTIVE SELECTIONS
+   ============================================ */
+
+.premium-ui-enabled
+input[type="checkbox"],
+.premium-ui-enabled
+input[type="radio"] {
+  accent-color: var(--portal-accent);
+  cursor: pointer;
+}
+
+.premium-ui-enabled
+input[type="checkbox"]:focus-visible,
+.premium-ui-enabled
+input[type="radio"]:focus-visible {
+  outline: 2px solid var(--portal-accent);
+  outline-offset: 3px;
+}
+
+/* ============================================
+   14. MOBILE AND ACCESSIBILITY
+   ============================================ */
+
+@media (max-width: 600px) {
+  .premium-ui-enabled
+  .premium-item-reveal {
+    transition-duration: 450ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .premium-ui-enabled
+  .premium-item-reveal,
+  .premium-ui-enabled
+  .premium-item-reveal.premium-item-visible {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+
+  .premium-ui-enabled .design-card,
+  .premium-ui-enabled .design-image,
+  .premium-ui-enabled .result-card,
+  .premium-ui-enabled .result-card img,
+  .premium-ui-enabled .upload-area,
+  .premium-ui-enabled .upload-zone {
+    transition: none !important;
+  }
+
+  .premium-ui-enabled .dress-preview-modal,
+  .premium-ui-enabled .dress-preview-backdrop,
+  .premium-ui-enabled .dress-preview-full-image,
+  .premium-ui-enabled .modal-content,
+  .premium-ui-enabled .dialog-content {
+    animation: none !important;
+  }
+}

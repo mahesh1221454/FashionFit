@@ -1,29 +1,32 @@
+
 import os
 import time
 import base64
 
 from io import BytesIO
 
-from dotenv import load_dotenv
 from PIL import Image, ImageOps
 from google import genai
 from google.genai import types
 
-
-# =========================================================
-# ENVIRONMENT
-# =========================================================
-
-load_dotenv()
-
-GEMINI_API_KEY = os.getenv(
-    "GEMINI_API_KEY"
+from app.core.gemini_config import (
+    GEMINI_API_KEY,
+    GEMINI_MODEL,
+    MAX_RETRIES,
+    RETRY_DELAYS,
+    MAX_INPUT_DIMENSION,
 )
 
-if not GEMINI_API_KEY:
-    raise RuntimeError(
-        "GEMINI_API_KEY is missing in backend/.env"
-    )
+from app.services.gemini_usage import (
+    record_gemini_usage,
+    elapsed_milliseconds,
+)
+
+from app.services.generated_image_storage import (
+    generated_output_details,
+    is_existing_image_usable,
+    save_generated_image_atomic,
+)
 
 
 # =========================================================
@@ -36,30 +39,18 @@ client = genai.Client(
 
 
 # =========================================================
-# CONFIGURATION
+# OUTPUT CONFIGURATION
 # =========================================================
 
-GEMINI_MODEL = (
-    "gemini-3.1-flash-image"
-)
-
 GENERATED_DIR = "generated"
-
-MAX_RETRIES = 3
-
-RETRY_DELAYS = [
-    3,
-    6,
-    12,
-]
-
-MAX_INPUT_DIMENSION = 1536
-
 
 os.makedirs(
     GENERATED_DIR,
     exist_ok=True,
 )
+
+
+
 
 
 # =========================================================
@@ -185,7 +176,7 @@ def prepare_input_image(
 
         print(
             "[IMAGE] Rotating customer "
-            "photo 90° clockwise."
+            "photo 90Â° clockwise."
         )
 
 
@@ -398,135 +389,119 @@ Return only the generated image.
 # GEMINI CALL WITH RETRIES
 # =========================================================
 
+# =========================================================
+# GEMINI CALL WITH RETRIES + DATABASE USAGE TRACKING
+# =========================================================
+
 def call_gemini_with_retry(
     prompt: str,
     design_image: Image.Image,
     person_image: Image.Image,
     view: str,
+    job_id=None,
 ):
-
     last_error = None
-
 
     for attempt in range(
         1,
         MAX_RETRIES + 1,
     ):
+        print()
+        print("------------------------------------------")
+        print(
+            f"[GEMINI] {view.upper()} "
+            f"attempt {attempt}/{MAX_RETRIES}"
+        )
+        print("------------------------------------------")
+
+        # Time only the Gemini request, not retry delays.
+        started_at = time.perf_counter()
 
         try:
-
-            print()
-            print(
-                "------------------------------------------"
+            response = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=[
+                    prompt,
+                    design_image,
+                    person_image,
+                ],
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE"],
+                ),
             )
-
-            print(
-                f"[GEMINI] "
-                f"{view.upper()} "
-                f"attempt "
-                f"{attempt}/{MAX_RETRIES}"
-            )
-
-            print(
-                "------------------------------------------"
-            )
-
-
-            response = (
-                client.models.generate_content(
-
-                    model=GEMINI_MODEL,
-
-                    contents=[
-                        prompt,
-                        design_image,
-                        person_image,
-                    ],
-
-                    config=(
-                        types.GenerateContentConfig(
-                            response_modalities=[
-                                "IMAGE"
-                            ]
-                        )
-                    ),
-                )
-            )
-
-
-            print(
-                f"[GEMINI] "
-                f"{view.upper()} request succeeded."
-            )
-
-
-            return response
-
 
         except Exception as error:
+            duration_ms = elapsed_milliseconds(
+                started_at
+            )
 
             last_error = error
 
+            # Record this failed API attempt.
+            # The recorder handles its own database errors.
+            record_gemini_usage(
+                model_name=GEMINI_MODEL,
+                view_name=view,
+                attempt_number=attempt,
+                status="failed",
+                duration_ms=duration_ms,
+                error=error,
+                job_id=job_id,
+            )
 
             print(
-                f"[GEMINI] "
-                f"{view.upper()} "
+                f"[GEMINI] {view.upper()} "
                 f"attempt {attempt} failed:"
             )
 
-            print(
-                str(error)
-            )
+            print(str(error))
 
-
-            if not is_retryable_gemini_error(
-                error
-            ):
-
+            if not is_retryable_gemini_error(error):
                 raise RuntimeError(
                     f"Gemini generation failed "
                     f"for {view} view: {error}"
-                )
+                ) from error
 
-
-            if (
-                attempt >=
-                MAX_RETRIES
-            ):
-
+            if attempt >= MAX_RETRIES:
                 break
-
 
             delay_index = min(
                 attempt - 1,
-                len(
-                    RETRY_DELAYS
-                ) - 1,
+                len(RETRY_DELAYS) - 1,
             )
 
+            delay = RETRY_DELAYS[delay_index]
 
-            delay = (
-                RETRY_DELAYS[
-                    delay_index
-                ]
-            )
-
-
+            print("[GEMINI] Temporary error.")
             print(
-                f"[GEMINI] Temporary error."
-            )
-
-            print(
-                f"[GEMINI] Retrying "
-                f"{view.upper()} "
+                f"[GEMINI] Retrying {view.upper()} "
                 f"in {delay} seconds..."
             )
 
+            time.sleep(delay)
+            continue
 
-            time.sleep(
-                delay
-            )
+        # Record the successful API attempt.
+        duration_ms = elapsed_milliseconds(
+            started_at
+        )
 
+        record_gemini_usage(
+            model_name=GEMINI_MODEL,
+            view_name=view,
+            attempt_number=attempt,
+            status="success",
+            duration_ms=duration_ms,
+            response=response,
+            job_id=job_id,
+        )
+
+        print(
+            f"[GEMINI] {view.upper()} "
+            "request succeeded."
+        )
+
+        return response
 
     raise RuntimeError(
         f"Gemini generation failed "
@@ -767,6 +742,7 @@ def generate_single_image(
     person_image_path: str,
     view: str,
     job_id: str,
+    usage_job_id=None,
 ):
 
     # =====================================================
@@ -840,44 +816,14 @@ def generate_single_image(
     # OUTPUT FOLDER
     # =====================================================
 
-    job_folder = os.path.join(
-        GENERATED_DIR,
-        str(job_id),
-    )
-
-
-    os.makedirs(
-        job_folder,
-        exist_ok=True,
-    )
-
-
-    filename = (
-        f"{view}.png"
-    )
-
-
-    output_path = os.path.join(
-        job_folder,
-        filename,
-    )
-
-
-    output_url = (
-        f"http://localhost:8000/"
-        f"generated/"
-        f"{job_id}/"
-        f"{filename}"
-    )
+    job_folder, output_path, output_url = generated_output_details(job_id, view)
 
 
     # =====================================================
     # REUSE EXISTING OUTPUT
     # =====================================================
 
-    if os.path.exists(
-        output_path
-    ):
+    if is_existing_image_usable(output_path):
 
         print(
             f"[GEMINI] "
@@ -998,7 +944,8 @@ def generate_single_image(
         design_image=design_image,
         person_image=person_image,
         view=view,
-    )
+                   job_id=usage_job_id,
+               )
 
 
     # =====================================================
@@ -1061,7 +1008,7 @@ def generate_single_image(
 
         print(
             "[OUTPUT] Rotating result "
-            "90° clockwise."
+            "90Â° clockwise."
         )
 
 
@@ -1093,11 +1040,7 @@ def generate_single_image(
 
     try:
 
-        generated_pil.save(
-            output_path,
-            format="PNG",
-            optimize=True,
-        )
+        save_generated_image_atomic(generated_pil, output_path)
 
 
     except Exception as error:
@@ -1155,3 +1098,4 @@ def generate_single_image(
         "reused":
             False,
     }
+

@@ -1,0 +1,545 @@
+
+/* ==========================================
+   FASHION PORTAL - COMPACT DRESS COLLECTION
+   ========================================== */
+
+/* Smaller, consistent cards */
+
+.compact-dress-grid {
+  display: grid !important;
+  grid-template-columns:
+    repeat(auto-fill, minmax(175px, 1fr)) !important;
+
+  gap: 18px !important;
+  margin-top: 25px !important;
+
+  align-items: start;
+}
+
+/* Card appearance */
+
+.compact-dress-grid .design-card {
+  min-width: 0;
+  overflow: hidden;
+
+  border: 1px solid #e4e4e7;
+  border-radius: 15px;
+
+  background: #ffffff;
+
+  box-shadow: 0 3px 12px rgba(0,0,0,0.035);
+
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.compact-dress-grid .design-card:hover {
+  transform: translateY(-4px);
+
+  border-color: #ff914d;
+
+  box-shadow:
+    0 12px 28px rgba(0,0,0,0.09);
+}
+
+/* Compact portrait image area */
+
+.compact-dress-grid .design-image-wrapper {
+  width: 100%;
+  aspect-ratio: 3 / 3.5;
+
+  overflow: hidden;
+  position: relative;
+
+  background: #f5f5f5;
+}
+
+/* Card thumbnail fills the available area */
+
+.compact-dress-grid .design-image {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center top;
+
+  transition: transform 0.35s ease;
+}
+
+.compact-dress-grid
+.design-card:not(.collection-manage-card):hover
+.design-image {
+  transform: scale(1.035);
+}
+
+/* Smaller text section */
+
+.compact-dress-grid .design-info {
+  padding: 11px 12px 13px;
+}
+
+.compact-dress-grid .design-code {
+  display: block;
+
+  color: #f97316;
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 0.03em;
+}
+
+.compact-dress-grid .design-info h3 {
+  margin: 5px 0 0;
+
+  color: #1f2937;
+
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Hover preview label */
+
+.compact-dress-grid .collection-view-hint {
+  font-size: 11px;
+  padding: 8px 12px;
+}
+
+/* ==========================================
+   FULL IMAGE PREVIEW - BACKDROP
+   ========================================== */
+
+.dress-preview-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background: rgba(13, 16, 24, 0.82);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  animation: dressBackdropIn 0.2s ease both;
+}
+
+@keyframes dressBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ==========================================
+   PREVIEW MODAL
+   ========================================== */
+
+.dress-preview-modal {
+  width: min(980px, 96vw);
+  max-height: 94vh;
+  max-height: 94dvh;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.18);
+
+  background: #ffffff;
+
+  box-shadow: 0 30px 95px rgba(0,0,0,0.32);
+
+  animation: dressModalIn 0.28s ease both;
+}
+
+@keyframes dressModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ==========================================
+   MODAL HEADER
+   ========================================== */
+
+.dress-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 15px 20px;
+
+  background: #ffffff;
+
+  border-bottom: 1px solid #ededed;
+}
+
+.dress-preview-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  min-width: 0;
+}
+
+.dress-preview-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 39px;
+  height: 39px;
+
+  border-radius: 12px;
+
+  background: #fff0e6;
+  color: #f97316;
+}
+
+.dress-preview-eyebrow {
+  display: block;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 0.12em;
+  color: #f97316;
+}
+
+.dress-preview-heading h2 {
+  margin: 3px 0 0;
+
+  font-size: 17px;
+  font-weight: 700;
+
+  color: #202938;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dress-preview-close {
+  width: 37px;
+  height: 37px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  background: white;
+  color: #374151;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dress-preview-close:hover {
+  background: #fff0e6;
+  color: #f97316;
+}
+
+/* ==========================================
+   COMPLETE IMAGE PREVIEW
+   ========================================== */
+
+.dress-preview-image-area {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 1;
+  min-height: 0;
+
+  padding: 12px 55px;
+
+  background: #f4f4f5;
+
+  overflow: hidden;
+}
+
+.dress-preview-image-box {
+  width: 100%;
+  height: 100%;
+
+  min-height: 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  overflow: hidden;
+}
+
+/* IMPORTANT: contain displays complete image */
+
+.dress-preview-full-image {
+  display: block;
+
+  max-width: 100%;
+  max-height: min(65vh, 680px);
+  max-height: min(65dvh, 680px);
+
+  width: auto;
+  height: auto;
+
+  object-fit: contain;
+
+  border-radius: 8px;
+
+  box-shadow: 0 8px 24px rgba(0,0,0,0.09);
+}
+
+.dress-preview-image-error {
+  color: #71717a;
+  font-size: 14px;
+}
+
+/* Previous / next navigation */
+
+.dress-preview-arrow {
+  position: absolute;
+  top: 50%;
+
+  width: 39px;
+  height: 39px;
+
+  transform: translateY(-50%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #e4e4e7;
+  border-radius: 50%;
+
+  color: #262626;
+  background: #ffffff;
+
+  cursor: pointer;
+
+  box-shadow: 0 3px 12px rgba(0,0,0,0.09);
+
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.dress-preview-arrow:hover {
+  background: #f97316;
+  color: #ffffff;
+}
+
+.dress-preview-prev {
+  left: 12px;
+}
+
+.dress-preview-next {
+  right: 12px;
+}
+
+/* ==========================================
+   PREVIEW FOOTER
+   ========================================== */
+
+.dress-preview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  padding: 16px 22px;
+
+  background: #ffffff;
+
+  border-top: 1px solid #ededed;
+}
+
+.dress-preview-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  min-width: 0;
+}
+
+.dress-preview-design-code {
+  color: #f97316;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dress-preview-details strong {
+  color: #202938;
+
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.dress-preview-details small {
+  color: #8b8b93;
+  font-size: 11px;
+}
+
+.dress-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dress-preview-secondary-button,
+.dress-preview-primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 42px;
+
+  padding: 11px 17px;
+
+  border-radius: 10px;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.dress-preview-secondary-button {
+  background: #ffffff;
+  color: #374151;
+
+  border: 1px solid #dcdfe4;
+}
+
+.dress-preview-primary-button {
+  background: #f97316;
+  color: #ffffff;
+
+  border: 1px solid #f97316;
+}
+
+.dress-preview-primary-button:hover {
+  background: #ea580c;
+}
+
+/* ==========================================
+   TABLET / MOBILE
+   ========================================== */
+
+@media (max-width: 1100px) {
+  .compact-dress-grid {
+    grid-template-columns:
+      repeat(auto-fill, minmax(155px, 1fr)) !important;
+
+    gap: 14px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .compact-dress-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr)) !important;
+
+    gap: 12px !important;
+  }
+
+  .compact-dress-grid .design-info {
+    padding: 9px 10px;
+  }
+
+  .compact-dress-grid .design-info h3 {
+    font-size: 12px;
+  }
+
+  .dress-preview-backdrop {
+    padding: 10px;
+  }
+
+  .dress-preview-modal {
+    width: 100%;
+    max-height: 95dvh;
+    border-radius: 15px;
+  }
+
+  .dress-preview-header {
+    padding: 12px;
+  }
+
+  .dress-preview-heading h2 {
+    font-size: 14px;
+  }
+
+  .dress-preview-image-area {
+    padding: 12px 42px;
+  }
+
+  .dress-preview-full-image {
+    max-height: 58dvh;
+  }
+
+  .dress-preview-arrow {
+    width: 32px;
+    height: 32px;
+  }
+
+  .dress-preview-prev {
+    left: 5px;
+  }
+
+  .dress-preview-next {
+    right: 5px;
+  }
+
+  .dress-preview-footer {
+    padding: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .dress-preview-actions {
+    width: 100%;
+  }
+
+  .dress-preview-actions button {
+    flex: 1;
+    padding: 10px;
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compact-dress-grid .design-card,
+  .dress-preview-modal,
+  .dress-preview-backdrop {
+    animation: none;
+    transition: none;
+  }
+}

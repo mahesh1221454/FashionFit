@@ -1,3 +1,6 @@
+import os
+from pydantic import field_serializer
+
 from typing import Optional
 from uuid import UUID
 
@@ -23,6 +26,22 @@ class DesignResponse(BaseModel):
     is_active: bool
 
     model_config = ConfigDict(from_attributes=True)
+
+
+    # FASHIONFIT_CATALOG_URL_NORMALIZATION
+    @field_serializer("image_url")
+    def serialize_catalog_image_url(self, value):
+        base_url = os.getenv("PUBLIC_BACKEND_URL", "").rstrip("/")
+
+        if not value or not base_url:
+            return value
+
+        if "/catalog/" in value:
+            relative_path = value.split("/catalog/", 1)[1]
+            return f"{base_url}/catalog/{relative_path}"
+
+        return value
+
 
 
 class GenerationJobResponse(BaseModel):

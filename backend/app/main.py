@@ -11,6 +11,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+import mimetypes
+
+mimetypes.add_type("image/webp", ".webp")
+
 from app.database import Base, engine
 
 from app.routes.categories import (

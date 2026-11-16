@@ -1,3 +1,4 @@
+from app.services.webp_service import save_webp
 
 import base64
 import hashlib
@@ -966,13 +967,8 @@ from app.routes.custom_designs import (
 )
 
 
-def _save_replacement_jpeg(image, destination):
-    image.save(
-        destination,
-        format="JPEG",
-        quality=IMAGE_QUALITY,
-        optimize=True,
-    )
+def _save_replacement_webp(image, destination):
+    save_webp(image, destination)
 
 
 @router.post(
@@ -1029,7 +1025,7 @@ async def replace_dress_image(
         # -------------------------------------------------
 
         image_id = uuid.uuid4()
-        filename = f"{image_id.hex}.jpg"
+        filename = f"{image_id.hex}.webp"
 
         CUSTOM_IMAGE_DIR.mkdir(
             parents=True,
@@ -1045,7 +1041,7 @@ async def replace_dress_image(
         # -------------------------------------------------
 
         await run_in_threadpool(
-            _save_replacement_jpeg,
+            _save_replacement_webp,
             image,
             new_file_path,
         )

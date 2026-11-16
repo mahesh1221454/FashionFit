@@ -1,3 +1,4 @@
+from app.services.webp_service import save_webp
 
 import os
 import tempfile
@@ -129,6 +130,15 @@ if any(
 # ==========================================================
 
 def validate_job_id(job_id):
+    value = str(job_id)
+
+    if value.startswith("temp_"):
+        suffix = value[5:]
+        parsed = uuid.UUID(hex=suffix)
+        if parsed.hex != suffix:
+            raise ValueError("Invalid temporary job ID.")
+        return value
+
     try:
         parsed = uuid.UUID(str(job_id))
     except (ValueError, TypeError, AttributeError):
@@ -325,11 +335,7 @@ def save_generated_image_atomic(
                 temporary_file.name
             )
 
-        generated_image.save(
-            temporary_path,
-            format=GENERATED_IMAGE_FORMAT,
-            optimize=True,
-        )
+        save_webp(generated_image, temporary_path)
 
         # Ensure written bytes are flushed.
         with open(temporary_path, "r+b") as saved:

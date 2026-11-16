@@ -1,3 +1,5 @@
+from app.services.webp_service import decode_upload, save_webp
+from fastapi.concurrency import run_in_threadpool
 
 import json
 import os
@@ -185,73 +187,16 @@ def clean_expired_sessions():
 
 
 async def store_image(upload, destination):
-    if upload.content_type not in ALLOWED_TYPES:
-        raise HTTPException(
-            status_code=415,
-            detail="Unsupported image format.",
-        )
+    image = await decode_upload(
+        upload,
+        MAX_BYTES,
+        MAX_PIXELS,
+        MAX_DIMENSION,
+    )
 
-    content = await upload.read(MAX_BYTES + 1)
-    await upload.close()
+    destination.parent.mkdir(parents=True, exist_ok=True)
 
-    if not content:
-        raise HTTPException(
-            status_code=400,
-            detail="An uploaded image is empty.",
-        )
-
-    if len(content) > MAX_BYTES:
-        raise HTTPException(
-            status_code=413,
-            detail="An image exceeds the upload limit.",
-        )
-
-    try:
-        with Image.open(BytesIO(content)) as original:
-            if original.format not in {"JPEG", "PNG", "WEBP"}:
-                raise ValueError("Unsupported image content.")
-
-            if original.width * original.height > MAX_PIXELS:
-                raise ValueError("Image dimensions are too large.")
-
-            original.load()
-
-            corrected = ImageOps.exif_transpose(original)
-
-            if corrected.mode in {"RGBA", "LA", "P"}:
-                rgba = corrected.convert("RGBA")
-                image = Image.new("RGB", rgba.size, "white")
-                image.paste(rgba, mask=rgba.getchannel("A"))
-            else:
-                image = corrected.convert("RGB")
-
-            image.thumbnail(
-                (MAX_DIMENSION, MAX_DIMENSION),
-                Image.Resampling.LANCZOS,
-            )
-
-            destination.parent.mkdir(
-                parents=True,
-                exist_ok=True,
-            )
-
-            image.save(
-                destination,
-                format="JPEG",
-                quality=92,
-            )
-
-    except (
-        UnidentifiedImageError,
-        ValueError,
-        OSError,
-        Image.DecompressionBombError,
-        Image.DecompressionBombWarning,
-    ) as exc:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid or damaged image file.",
-        ) from exc
+    await run_in_threadpool(save_webp, image, destination)
 
 
 def process_temporary_generation(session_id):
@@ -283,8 +228,8 @@ def process_temporary_generation(session_id):
                 return
 
             result = generate_single_image(
-                str(folder / "dress.jpg"),
-                str(folder / f"{view}.jpg"),
+                str(folder / "dress.webp"),
+                str(folder / f"{view}.webp"),
                 view,
                 session_id,
             )
@@ -298,8 +243,7 @@ def process_temporary_generation(session_id):
                 session_id,
                 **{
                     f"output_{view}_url": (
-                        f"{PUBLIC_BACKEND_URL}/generated/"
-                        f"{session_id}/{view}.png"
+                        result["image_url"]
                     ),
                     "progress": steps[view],
                 },
@@ -335,11 +279,11 @@ def process_temporary_generation(session_id):
         # Keep only session metadata and generated
         # results until the expiration period.
         for filename in (
-            "dress.jpg",
-            "front.jpg",
-            "left.jpg",
-            "right.jpg",
-            "back.jpg",
+            "dress.webp",
+            "front.webp",
+            "left.webp",
+            "right.webp",
+            "back.webp",
         ):
             with suppress(OSError):
                 (folder / filename).unlink(missing_ok=True)
@@ -369,7 +313,7 @@ async def create_temporary_generation(
         for name, upload in uploads.items():
             await store_image(
                 upload,
-                folder / f"{name}.jpg",
+                folder / f"{name}.webp",
             )
 
         data = {

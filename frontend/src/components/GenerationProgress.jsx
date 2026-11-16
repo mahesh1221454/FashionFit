@@ -7,118 +7,99 @@ const VIEWS = [
   { key: "back", label: "Back View" },
 ];
 
-const clamp = (value, min = 0, max = 100) =>
-  Math.max(min, Math.min(max, value));
-
-function getViewProgress(view, job, overall) {
-  const url = job?.[`output_${view}_url`];
-
-  if (typeof url === "string" && url.trim()) {
-    return 100;
-  }
-
-  const temporary = Boolean(job?.temporary) ||
-    String(job?.id || "").startsWith("temp_");
-
-  const checkpoints = temporary
-    ? { front: [5, 25], left: [25, 50],
-        right: [50, 75], back: [75, 95] }
-    : { front: [10, 35], left: [35, 55],
-        right: [55, 75], back: [75, 95] };
-
-  const [start, end] = checkpoints[view];
-
-  if (overall <= start) return 0;
-
-  // Estimated progress. Never show 100 until
-  // the backend returns the actual image URL.
-  return clamp(
-    Math.round(((overall - start) / (end - start)) * 95),
-    0,
-    99
-  );
-}
-
-function PreviewCard({ view, job, overall, failed }) {
+function PreviewCard({ view, job, activeKey, failed, onPreview }) {
   const [imageError, setImageError] = useState(false);
-
   const url = job?.[`output_${view.key}_url`] || null;
-  const percentage = getViewProgress(view.key, job, overall);
-  const ready = percentage === 100;
-  const active = !ready && percentage > 0;
 
   useEffect(() => {
     setImageError(false);
   }, [url]);
 
-  const status = ready
-    ? "Ready"
-    : failed
-      ? "Not completed"
-      : active
-        ? "Generating"
-        : "Waiting";
+  const ready = Boolean(url);
+  const active = !ready && !failed && activeKey === view.key;
+
+  const state = imageError
+    ? "error"
+    : ready
+      ? "ready"
+      : failed
+        ? "error"
+        : active
+          ? "active"
+          : "waiting";
+
+  const statusText =
+    state === "ready"
+      ? "Completed"
+      : state === "active"
+        ? "Generating..."
+        : state === "error"
+          ? "Preview unavailable"
+          : "Waiting";
 
   return (
-    <article className="ff-live-card">
-      <div className="ff-live-preview">
+    <article className={`ffg-card ffg-${state}`}>
+      <div className="ffg-image-area">
         {ready && !imageError ? (
           <img
             src={url}
             alt={`Generated ${view.label}`}
             loading="eager"
+            decoding="async"
             onError={() => setImageError(true)}
           />
         ) : (
-          <div className="ff-live-placeholder">
-            {imageError ? (
+          <div className="ffg-placeholder">
+            {active ? (
               <>
-                <span className="ff-live-symbol">!</span>
-                <span>Unable to display preview</span>
-              </>
-            ) : active ? (
-              <>
-                <span className="ff-live-spinner" />
-                <span>Creating your look...</span>
+                <span className="ffg-spinner" />
+                <strong>Generating your look</strong>
+                <small>Creating {view.label.toLowerCase()}...</small>
               </>
             ) : (
               <>
-                <span className="ff-live-symbol">◷</span>
+                <span className="ffg-placeholder-icon">
+                  {state === "error" ? "!" : "▧"}
+                </span>
                 <span>
-                  {failed ? "Not completed" : "Waiting for view"}
+                  {state === "error"
+                    ? "Image unavailable"
+                    : "Waiting for preview"}
                 </span>
               </>
             )}
           </div>
         )}
+
+        {ready && !imageError && (
+          <button
+            type="button"
+            className="ffg-preview-button"
+            onClick={() => onPreview({ url, label: view.label })}
+            aria-label={`Preview ${view.label}`}
+          >
+            <span aria-hidden="true">⤢</span> Preview
+          </button>
+        )}
       </div>
 
-      <div className="ff-live-details">
-        <div className="ff-live-card-heading">
-          <strong>{view.label}</strong>
-          <span className={ready ? "ff-ready" : ""}>
-            {percentage}%
-          </span>
+      <div className="ffg-card-info">
+        <div>
+          <h3>{view.label}</h3>
+          <p className={`ffg-card-status ffg-text-${state}`}>
+            {state === "ready" ? "✓ " : ""}
+            {statusText}
+          </p>
         </div>
-
-        <div className="ff-live-track">
-          <div
-            className={
-              "ff-live-fill" + (ready ? " ff-complete" : "")
-            }
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-
-        <div
-          className={
-            "ff-live-status" + (ready ? " ff-ready" : "")
-          }
-        >
-          {ready ? "✓ " : ""}
-          {status}
-          {active && !failed ? " · estimated" : ""}
-        </div>
+        <span className={`ffg-state-indicator ffg-dot-${state}`}>
+          {state === "ready"
+            ? "✓"
+            : state === "active"
+              ? "↻"
+              : state === "error"
+                ? "!"
+                : "○"}
+        </span>
       </div>
     </article>
   );
@@ -129,274 +110,524 @@ export default function GenerationProgress({
   status = "Generating your look",
   job = null,
 }) {
-  const safeProgress = clamp(Number(progress) || 0);
+  const [preview, setPreview] = useState(null);
+
   const failed = job?.status === "failed";
-
-  const steps = [
-    { label: "Preparing", value: 10 },
-    { label: "Front View", value: 35 },
-    { label: "Side Views", value: 65 },
-    { label: "Back View", value: 85 },
-    { label: "Complete", value: 100 },
-  ];
-
   const readyCount = VIEWS.filter(
     ({ key }) => Boolean(job?.[`output_${key}_url`])
   ).length;
 
+  const complete = readyCount === 4;
+  const started =
+    readyCount > 0 ||
+    job?.status === "processing" ||
+    Number(progress) > 0;
+
+  const nextView = VIEWS.find(
+    ({ key }) => !job?.[`output_${key}_url`]
+  );
+
+  const activeKey =
+    !failed && !complete && started && nextView
+      ? nextView.key
+      : null;
+
+  useEffect(() => {
+    if (!preview) return;
+
+    function handleEscape(event) {
+      if (event.key === "Escape") {
+        setPreview(null);
+      }
+    }
+
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [preview]);
+
   return (
-    <div className="generation-progress premium-generation-card">
+    <div className="ffg-wrapper">
       <style>{`
-        .ff-live-section {
+        .generation-page-inner:has(.ffg-wrapper) {
           width: 100%;
-          margin-top: 28px;
-          padding-top: 24px;
-          border-top: 1px solid #e8eaf0;
+          max-width: 1200px;
+        }
+
+        .ffg-wrapper,
+        .ffg-wrapper * {
+          box-sizing: border-box;
+        }
+
+        .ffg-wrapper {
+          width: 100%;
+          max-width: 1160px;
+          margin: 0 auto;
+          padding: 32px;
+          border: 1px solid #e8ecf2;
+          border-radius: 24px;
+          background: #ffffff;
+          box-shadow: 0 15px 45px rgba(22, 34, 55, .06);
+          color: #17243b;
           text-align: left;
         }
 
-        .ff-live-heading {
+        .ffg-header {
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          gap: 12px;
-          margin-bottom: 15px;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 15px;
+          margin-bottom: 24px;
         }
 
-        .ff-live-heading h3 {
+        .ffg-title-area {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+
+        .ffg-icon {
+          display: grid;
+          place-items: center;
+          width: 52px;
+          height: 52px;
+          flex-shrink: 0;
+          border-radius: 16px;
+          background: #fff0e6;
+          color: #fa590a;
+          font-size: 28px;
+        }
+
+        .ffg-header h2 {
+          margin: 0 0 5px;
+          font-size: clamp(20px, 2.3vw, 28px);
+          font-weight: 800;
+          line-height: 1.25;
+          color: #14213a;
+        }
+
+        .ffg-header p {
           margin: 0;
-          font-size: 17px;
-          font-weight: 750;
-          color: #243044;
+          color: #8190a5;
+          font-size: 13px;
+          line-height: 1.5;
         }
 
-        .ff-live-count {
-          color: #f97316;
-          font-size: 12px;
-          font-weight: 700;
+        .ffg-counter {
+          padding: 10px 17px;
+          border-radius: 30px;
+          background: #fff1e9;
+          color: #f65a08;
+          font-size: 15px;
+          font-weight: 800;
           white-space: nowrap;
         }
 
-        .ff-live-grid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 11px;
+        .ffg-counter.done {
+          background: #e9f8ef;
+          color: #17934e;
         }
 
-        .ff-live-card {
-          min-width: 0;
-          background: #fff;
-          border: 1px solid #e7eaf0;
-          border-radius: 13px;
+        .ffg-progress {
+          height: 7px;
+          margin-bottom: 26px;
           overflow: hidden;
+          border-radius: 20px;
+          background: #edf0f4;
         }
 
-        .ff-live-preview {
+        .ffg-progress-fill {
+          height: 100%;
+          border-radius: inherit;
+          background: linear-gradient(90deg, #ff5808, #ff9b38);
+          transition: width .45s ease;
+        }
+
+        .ffg-progress-fill.done {
+          background: #23aa60;
+        }
+
+        .ffg-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 22px;
+        }
+
+        .ffg-card {
+          min-width: 0;
+          overflow: hidden;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 19px;
+          background: #fff;
+          transition: border-color .2s, box-shadow .2s;
+        }
+
+        .ffg-card.ffg-ready {
+          border-color: #4cc681;
+          box-shadow: 0 6px 20px rgba(32, 170, 92, .07);
+        }
+
+        .ffg-card.ffg-active {
+          border-color: #ff873b;
+          box-shadow: 0 6px 22px rgba(255, 107, 21, .10);
+        }
+
+        .ffg-image-area {
           position: relative;
-          aspect-ratio: 3 / 4;
-          background: #f1f3f7;
           display: flex;
           align-items: center;
           justify-content: center;
+          width: 100%;
+          height: clamp(280px, 36vw, 440px);
           overflow: hidden;
+          background: #f3f5f9;
         }
 
-        .ff-live-preview img {
+        .ffg-image-area img {
           display: block;
           width: 100%;
           height: 100%;
           object-fit: contain;
-          animation: ffImageReveal .5s ease both;
+          animation: ffg-reveal .5s ease;
         }
 
-        .ff-live-placeholder {
+        .ffg-placeholder {
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 11px;
-          padding: 8px;
-          color: #8e99aa;
+          gap: 14px;
+          padding: 20px;
+          color: #97a3b5;
           text-align: center;
-          font-size: 11px;
+          font-size: 13px;
         }
 
-        .ff-live-symbol {
-          font-size: 27px;
-          color: #a5adba;
+        .ffg-placeholder strong {
+          color: #f56615;
+          font-size: 15px;
         }
 
-        .ff-live-spinner {
-          width: 28px;
-          height: 28px;
-          border: 3px solid #ffdec6;
-          border-top-color: #f97316;
+        .ffg-placeholder small {
+          font-size: 12px;
+          color: #9aa5b6;
+        }
+
+        .ffg-placeholder-icon {
+          display: grid;
+          place-items: center;
+          width: 74px;
+          height: 74px;
+          border-radius: 19px;
+          background: #e8edf4;
+          color: #9ca8b8;
+          font-size: 38px;
+        }
+
+        .ffg-spinner {
+          width: 48px;
+          height: 48px;
+          border: 5px solid #ffdfca;
+          border-top-color: #f65b0c;
           border-radius: 50%;
-          animation: ffSpin .9s linear infinite;
+          animation: ffg-spin .8s linear infinite;
         }
 
-        .ff-live-details {
-          padding: 10px 9px 12px;
+        .ffg-preview-button {
+          position: absolute;
+          right: 14px;
+          bottom: 14px;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          padding: 10px 15px;
+          border: 0;
+          border-radius: 11px;
+          background: rgba(255,255,255,.96);
+          color: #17243b;
+          box-shadow: 0 4px 15px rgba(0,0,0,.12);
+          font-size: 13px;
+          font-weight: 750;
+          cursor: pointer;
+          transition: transform .2s;
         }
 
-        .ff-live-card-heading {
+        .ffg-preview-button:hover {
+          transform: translateY(-2px);
+          color: #f65b0c;
+        }
+
+        .ffg-card-info {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          gap: 5px;
-          margin-bottom: 9px;
-          color: #263044;
-          font-size: 11px;
+          padding: 17px 20px;
+          gap: 12px;
         }
 
-        .ff-live-card-heading span {
-          color: #f97316;
+        .ffg-card-info h3 {
+          margin: 0 0 6px;
+          color: #1b2a42;
+          font-size: 17px;
           font-weight: 800;
-          font-variant-numeric: tabular-nums;
         }
 
-        .ff-live-card-heading .ff-ready {
-          color: #169653;
+        .ffg-card-status {
+          margin: 0;
+          font-size: 13px;
+          font-weight: 650;
         }
 
-        .ff-live-track {
-          height: 5px;
-          background: #e8ebf0;
-          border-radius: 99px;
-          overflow: hidden;
+        .ffg-text-ready { color: #199c54; }
+        .ffg-text-active { color: #fa5f0b; }
+        .ffg-text-waiting { color: #9aa5b5; }
+        .ffg-text-error { color: #d64343; }
+
+        .ffg-state-indicator {
+          display: grid;
+          place-items: center;
+          width: 36px;
+          height: 36px;
+          flex-shrink: 0;
+          border-radius: 50%;
+          font-size: 19px;
         }
 
-        .ff-live-fill {
-          height: 100%;
-          background: #f97316;
-          border-radius: 99px;
-          transition: width .45s ease;
+        .ffg-dot-ready {
+          color: #159e52;
+          background: #e1f7ea;
         }
 
-        .ff-live-fill.ff-complete {
-          background: #19a35e;
+        .ffg-dot-active {
+          color: #f65b0c;
+          background: #ffede1;
+          animation: ffg-spin 1.8s linear infinite;
         }
 
-        .ff-live-status {
-          margin-top: 7px;
-          color: #8c97a6;
-          font-size: 10px;
+        .ffg-dot-waiting {
+          color: #95a1b4;
+          background: #f0f2f5;
         }
 
-        .ff-live-status.ff-ready {
-          color: #169653;
-          font-weight: 700;
+        .ffg-dot-error {
+          color: #d64343;
+          background: #fdecec;
         }
 
-        .ff-live-note {
-          margin: 15px 0 0;
-          color: #8b95a5;
-          font-size: 11px;
+        .ffg-footer-note {
+          margin: 23px 0 0;
+          color: #8794a8;
+          font-size: 12px;
           text-align: center;
         }
 
-        @keyframes ffSpin {
+        .ffg-modal {
+          position: fixed;
+          z-index: 99999;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          background: rgba(9, 17, 31, .88);
+        }
+
+        .ffg-modal-content {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          max-width: min(95vw, 900px);
+          max-height: 95vh;
+          color: white;
+        }
+
+        .ffg-modal-content img {
+          max-width: 100%;
+          max-height: 82vh;
+          object-fit: contain;
+          border-radius: 12px;
+        }
+
+        .ffg-modal-heading {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 15px;
+          font-size: 17px;
+          font-weight: 700;
+        }
+
+        .ffg-close-button {
+          border: 1px solid rgba(255,255,255,.3);
+          border-radius: 9px;
+          background: rgba(255,255,255,.12);
+          color: white;
+          padding: 8px 14px;
+          font-size: 13px;
+          cursor: pointer;
+        }
+
+        @keyframes ffg-spin {
           to { transform: rotate(360deg); }
         }
 
-        @keyframes ffImageReveal {
-          from { opacity: 0; transform: scale(.96); }
+        @keyframes ffg-reveal {
+          from { opacity: 0; transform: scale(.97); }
           to { opacity: 1; transform: scale(1); }
         }
 
-        @media (max-width: 700px) {
-          .ff-live-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+        @media (max-width: 650px) {
+          .ffg-wrapper {
+            padding: 18px 14px;
+            border-radius: 17px;
+          }
+
+          .ffg-grid {
+            gap: 13px;
+          }
+
+          .ffg-image-area {
+            height: clamp(210px, 55vw, 330px);
+          }
+
+          .ffg-card-info {
+            padding: 12px;
+          }
+
+          .ffg-card-info h3 {
+            font-size: 14px;
+          }
+
+          .ffg-card-status {
+            font-size: 11px;
+          }
+
+          .ffg-state-indicator {
+            width: 28px;
+            height: 28px;
+            font-size: 15px;
+          }
+
+          .ffg-preview-button {
+            right: 8px;
+            bottom: 8px;
+            padding: 8px 10px;
+            font-size: 11px;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .ffg-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .ffg-image-area {
+            height: 360px;
           }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .ff-live-spinner,
-          .ff-live-preview img {
+          .ffg-spinner,
+          .ffg-dot-active,
+          .ffg-image-area img {
             animation: none;
           }
         }
       `}</style>
 
-      <div className="generation-orbit">
-        <div className="generation-orbit-inner">AI</div>
+      <div className="ffg-header">
+        <div className="ffg-title-area">
+          <span className="ffg-icon" aria-hidden="true">✦</span>
+          <div>
+            <h2>
+              {complete
+                ? "Your Fashion Preview Is Ready"
+                : "Generating Your Fashion Preview"}
+            </h2>
+            <p>
+              {failed
+                ? "Generation stopped before all views were ready."
+                : complete
+                  ? "All four views have been generated."
+                  : "Your AI-generated views appear one by one."}
+            </p>
+          </div>
+        </div>
+
+        <span className={`ffg-counter ${complete ? "done" : ""}`}>
+          {readyCount} / 4 Ready
+        </span>
       </div>
 
-      <span className="generation-eyebrow">
-        AI FASHION STUDIO
-      </span>
-
-      <h2>Creating Your Look</h2>
-
-      <p className="generation-status">{status}</p>
-
-      <div className="premium-progress-row">
-        <span>Progress</span>
-        <strong>{safeProgress}%</strong>
-      </div>
-
-      <div className="progress-track premium-progress-track">
+      <div
+        className="ffg-progress"
+        role="progressbar"
+        aria-label="Generated views"
+        aria-valuenow={readyCount}
+        aria-valuemin={0}
+        aria-valuemax={4}
+      >
         <div
-          className="progress-bar"
-          style={{ width: `${safeProgress}%` }}
+          className={`ffg-progress-fill ${complete ? "done" : ""}`}
+          style={{ width: `${(readyCount / 4) * 100}%` }}
         />
       </div>
 
-      <div className="generation-step-list">
-        {steps.map((step, index) => {
-          const completed = safeProgress >= step.value;
+      <div className="ffg-grid">
+        {VIEWS.map((view) => (
+          <PreviewCard
+            key={view.key}
+            view={view}
+            job={job}
+            activeKey={activeKey}
+            failed={failed}
+            onPreview={setPreview}
+          />
+        ))}
+      </div>
 
-          return (
-            <div
-              className={
-                "generation-step" +
-                (completed ? " completed" : "")
-              }
-              key={step.label}
-            >
-              <div className="generation-step-indicator">
-                {completed ? "✓" : index + 1}
-              </div>
+      <p className="ffg-footer-note" role="status">
+        {complete
+          ? "Your four-view fashion preview is complete."
+          : failed
+            ? "Some previews could not be generated."
+            : "Each completed image appears automatically. Select Preview to enlarge it."}
+      </p>
 
-              <span>{step.label}</span>
+      {preview && (
+        <div
+          className="ffg-modal"
+          role="presentation"
+          onClick={() => setPreview(null)}
+        >
+          <div
+            className="ffg-modal-content"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${preview.label} preview`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="ffg-modal-heading">
+              <span>{preview.label}</span>
+              <button
+                type="button"
+                className="ffg-close-button"
+                onClick={() => setPreview(null)}
+              >
+                ✕ Close
+              </button>
             </div>
-          );
-        })}
-      </div>
-
-      <section
-        className="ff-live-section"
-        aria-label="Live generated image previews"
-      >
-        <div className="ff-live-heading">
-          <h3>Live Image Previews</h3>
-          <span className="ff-live-count">
-            {readyCount} / 4 Ready
-          </span>
-        </div>
-
-        <div className="ff-live-grid">
-          {VIEWS.map((view) => (
-            <PreviewCard
-              key={view.key}
-              view={view}
-              job={job}
-              overall={safeProgress}
-              failed={failed}
+            <img
+              src={preview.url}
+              alt={`Full-size ${preview.label}`}
             />
-          ))}
+          </div>
         </div>
-
-        <p className="ff-live-note">
-          Each completed view appears automatically.
-          Loading percentages are estimates until ready.
-        </p>
-      </section>
-
-      <div className="generation-hint">
-        Please keep this page open while your
-        four-view fashion preview is being generated.
-      </div>
+      )}
     </div>
   );
 }

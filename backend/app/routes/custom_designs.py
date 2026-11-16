@@ -1,3 +1,4 @@
+from app.services.webp_service import decode_upload, save_webp
 
 import os
 import re
@@ -165,103 +166,12 @@ def generate_slug(name):
 # =========================================================
 
 async def validate_and_process_image(file):
-    if file.content_type not in ALLOWED_MIME_TYPES:
-        raise HTTPException(
-            status_code=415,
-            detail=(
-                "Unsupported image format. "
-                "Upload JPG, PNG or WebP."
-            ),
-        )
-
-    content = await file.read(
-        MAX_UPLOAD_BYTES + 1
+    return await decode_upload(
+        file,
+        MAX_UPLOAD_BYTES,
+        MAX_IMAGE_PIXELS,
+        MAX_IMAGE_DIMENSION,
     )
-
-    await file.close()
-
-    if not content:
-        raise HTTPException(
-            status_code=400,
-            detail="Uploaded image is empty.",
-        )
-
-    if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(
-            status_code=413,
-            detail="Image exceeds the upload size limit.",
-        )
-
-    try:
-        with Image.open(BytesIO(content)) as source:
-            if source.format not in {
-                "JPEG",
-                "PNG",
-                "WEBP",
-            }:
-                raise ValueError(
-                    "Invalid image format"
-                )
-
-            if (
-                source.width * source.height
-                > MAX_IMAGE_PIXELS
-            ):
-                raise ValueError(
-                    "Image dimensions exceed the limit"
-                )
-
-            source.load()
-
-            corrected = ImageOps.exif_transpose(
-                source
-            )
-
-            # Preserve transparency on a white
-            # background before converting to JPEG.
-
-            if corrected.mode in {
-                "RGBA",
-                "LA",
-                "P",
-            }:
-                rgba = corrected.convert("RGBA")
-
-                image = Image.new(
-                    "RGB",
-                    rgba.size,
-                    (255, 255, 255),
-                )
-
-                image.paste(
-                    rgba,
-                    mask=rgba.getchannel("A"),
-                )
-
-            else:
-                image = corrected.convert("RGB")
-
-            image.thumbnail(
-                (
-                    MAX_IMAGE_DIMENSION,
-                    MAX_IMAGE_DIMENSION,
-                ),
-                Image.Resampling.LANCZOS,
-            )
-
-            return image.copy()
-
-    except (
-        UnidentifiedImageError,
-        OSError,
-        ValueError,
-        Image.DecompressionBombError,
-        Image.DecompressionBombWarning,
-    ) as exc:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid or damaged dress image.",
-        ) from exc
 
 
 # =========================================================
@@ -478,7 +388,7 @@ async def create_custom_design(
 
     image_id = uuid.uuid4()
 
-    filename = f"{image_id.hex}.jpg"
+    filename = f"{image_id.hex}.webp"
 
     CUSTOM_IMAGE_DIR.mkdir(
         parents=True,
@@ -505,12 +415,7 @@ async def create_custom_design(
         # Save uploaded image
         # -------------------------------------------------
 
-        image.save(
-            file_path,
-            format="JPEG",
-            quality=IMAGE_QUALITY,
-            optimize=True,
-        )
+        save_webp(image, file_path)
 
         image_saved = True
 

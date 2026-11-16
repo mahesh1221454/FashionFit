@@ -31,11 +31,7 @@ import api from "../services/api";
 // CONFIGURATION
 // =========================================================
 
-const ACCEPTED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-];
+const ACCEPTED_IMAGE_TYPES = (import.meta.env.VITE_CUSTOM_DRESS_ALLOWED_TYPES || "").split(",").map(type => type.trim());
 
 // Optional client-side limit.
 // Actual image limits are enforced by FastAPI.
@@ -381,7 +377,7 @@ export default function EditDressDialog({
       !ACCEPTED_IMAGE_TYPES.includes(file.type)
     ) {
       setError(
-        "Please select a JPG, JPEG, PNG, or WebP image."
+        "Please select a supported image file."
       );
       return;
     }
@@ -890,7 +886,7 @@ export default function EditDressDialog({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept={ACCEPTED_IMAGE_TYPES.join(",")}
             className="ed-hidden-input"
             disabled={saving}
             onChange={(event) => {

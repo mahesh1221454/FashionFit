@@ -253,74 +253,233 @@ export default function LandingPage() {
     };
 
     // --------------------------------------------------
-    // Load a WebP frame.
+    // OPTIMIZED FRAME LOADING
+    // Prioritize current/nearby frames and limit requests.
     // --------------------------------------------------
 
-    const loadFrame = (index) => {
-      if (index < 0 || index >= TOTAL_FRAMES) {
+    const MAX_CONCURRENT = 5;
+    const PRELOAD_AHEAD = 12;
+    const PRELOAD_BEHIND = 6;
+    const CACHE_RADIUS = 28;
+
+    const pendingFrames = new Set();
+    const failedFrames = new Set();
+
+    let activeLoads = 0;
+    let targetFrame = 0;
+    let scrollDirection = 1;
+
+    const isReady = (image) =>
+      Boolean(
+        image?.complete &&
+        image.naturalWidth > 0 &&
+        image.naturalHeight > 0
+      );
+
+    // Draw the closest successfully loaded frame.
+    // Never clear the canvas for an unavailable image.
+    const drawNearestLoaded = (target) => {
+      const exact = cache.get(target);
+
+      if (isReady(exact)) {
+        if (lastDrawnFrame !== target) {
+          drawImage(exact, target);
+        }
         return;
       }
 
-      if (cache.has(index)) {
-        return;
+      let nearestIndex = -1;
+      let nearestDistance = Infinity;
+
+      for (const [index, image] of cache.entries()) {
+        if (!isReady(image)) continue;
+
+        const distance = Math.abs(index - target);
+
+        if (
+          distance < nearestDistance &&
+          distance <= CACHE_RADIUS
+        ) {
+          nearestDistance = distance;
+          nearestIndex = index;
+        }
       }
 
-      const image = new Image();
-
-      cache.set(index, image);
-
-      image.onload = () => {
-        if (!active) return;
-
-        if (currentFrameRef.current === index) {
-          drawImage(image, index);
-        }
-      };
-
-      image.onerror = () => {
-        if (cache.get(index) === image) {
-          cache.delete(index);
-        }
-      };
-
-      image.src = getFrameUrl(index);
+      if (
+        nearestIndex !== -1 &&
+        nearestIndex !== lastDrawnFrame
+      ) {
+        drawImage(cache.get(nearestIndex), nearestIndex);
+      }
     };
 
-    // --------------------------------------------------
-    // Display frame and preload adjacent frames.
-    // --------------------------------------------------
+    // Maintain a bounded cache of decoded images.
+    const trimCache = () => {
+      for (const [index, image] of cache.entries()) {
+        if (
+          Math.abs(index - targetFrame) > CACHE_RADIUS &&
+          image.complete
+        ) {
+          cache.delete(index);
+        }
+      }
+    };
 
+    // Start only a limited number of image requests.
+    const pumpQueue = () => {
+      if (!active) return;
+
+      for (const index of pendingFrames) {
+        if (
+          Math.abs(index - targetFrame) > CACHE_RADIUS
+        ) {
+          pendingFrames.delete(index);
+        }
+      }
+
+      while (
+        activeLoads < MAX_CONCURRENT &&
+        pendingFrames.size > 0
+      ) {
+        const sorted = [...pendingFrames].sort((a, b) => {
+          const distanceA = Math.abs(a - targetFrame);
+          const distanceB = Math.abs(b - targetFrame);
+
+          if (distanceA !== distanceB) {
+            return distanceA - distanceB;
+          }
+
+          return (
+            (b - targetFrame) * scrollDirection -
+            (a - targetFrame) * scrollDirection
+          );
+        });
+
+        const index = sorted[0];
+        pendingFrames.delete(index);
+
+        if (
+          cache.has(index) ||
+          failedFrames.has(index)
+        ) {
+          continue;
+        }
+
+        const image = new Image();
+        cache.set(index, image);
+        activeLoads += 1;
+
+        image.onload = () => {
+          activeLoads -= 1;
+
+          if (!active) return;
+
+          if (
+            Math.abs(index - targetFrame) > CACHE_RADIUS
+          ) {
+            cache.delete(index);
+          }
+
+          drawNearestLoaded(targetFrame);
+          pumpQueue();
+        };
+
+        image.onerror = () => {
+          activeLoads -= 1;
+
+          if (!active) return;
+
+          if (cache.get(index) === image) {
+            cache.delete(index);
+          }
+
+          failedFrames.add(index);
+          pumpQueue();
+        };
+
+        image.src = getFrameUrl(index);
+      }
+    };
+
+    // Queue a frame without duplicating requests.
+    const loadFrame = (index) => {
+      if (
+        index < 0 ||
+        index >= TOTAL_FRAMES ||
+        cache.has(index) ||
+        pendingFrames.has(index) ||
+        failedFrames.has(index)
+      ) {
+        return;
+      }
+
+      pendingFrames.add(index);
+      pumpQueue();
+    };
+
+    // Display frame and preload in scroll direction.
     const displayFrame = (frameIndex) => {
       const index = Math.round(
         clamp(frameIndex, 0, TOTAL_FRAMES - 1)
       );
 
+      if (index !== targetFrame) {
+        scrollDirection = index > targetFrame ? 1 : -1;
+      }
+
+      targetFrame = index;
       currentFrameRef.current = index;
 
-      const image = cache.get(index);
+      drawNearestLoaded(index);
 
-      if (
-        image?.complete &&
-        image.naturalWidth > 0 &&
-        lastDrawnFrame !== index
-      ) {
-        drawImage(image, index);
-      } else if (!image) {
-        loadFrame(index);
-      }
+      // Queue the exact target before nearby frames.
+      pendingFrames.add(index);
 
-      // Preload neighboring frames.
-      for (let offset = 1; offset <= 6; offset++) {
-        loadFrame(index + offset);
-        loadFrame(index - offset);
-      }
+      const ahead = scrollDirection === 1
+        ? PRELOAD_AHEAD
+        : PRELOAD_BEHIND;
 
-      // Prevent excessive memory consumption.
-      for (const [key] of cache.entries()) {
-        if (Math.abs(key - index) > 22) {
-          cache.delete(key);
+      const behind = scrollDirection === 1
+        ? PRELOAD_BEHIND
+        : PRELOAD_AHEAD;
+
+      for (let offset = 1; offset <= ahead; offset++) {
+        const next = index + offset;
+
+        if (
+          next < TOTAL_FRAMES &&
+          !cache.has(next) &&
+          !failedFrames.has(next)
+        ) {
+          pendingFrames.add(next);
         }
       }
+
+      for (let offset = 1; offset <= behind; offset++) {
+        const previous = index - offset;
+
+        if (
+          previous >= 0 &&
+          !cache.has(previous) &&
+          !failedFrames.has(previous)
+        ) {
+          pendingFrames.add(previous);
+        }
+      }
+
+      for (const queuedIndex of pendingFrames) {
+        if (
+          queuedIndex < 0 ||
+          queuedIndex >= TOTAL_FRAMES ||
+          cache.has(queuedIndex) ||
+          failedFrames.has(queuedIndex)
+        ) {
+          pendingFrames.delete(queuedIndex);
+        }
+      }
+
+      trimCache();
+      pumpQueue();
     };
 
     // --------------------------------------------------

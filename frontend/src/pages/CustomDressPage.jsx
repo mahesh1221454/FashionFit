@@ -26,6 +26,7 @@ import {
 
 import "../styles/customDress.css";
 import "../styles/temporaryTryOn.css";
+import "../styles/selectedDressPremium.css";
 
 const MAX_BYTES = Number(
   import.meta.env.VITE_CUSTOM_DRESS_MAX_BYTES
@@ -162,27 +163,39 @@ function ImageField({
   );
 }
 
+
 function DressPreview({ dress }) {
-  const url = useMemo(
-    () => URL.createObjectURL(dress.file),
-    [dress.file]
-  );
+  const [url, setUrl] = useState("");
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    return () => URL.revokeObjectURL(url);
-  }, [url]);
+    setFailed(false);
+
+    const objectUrl = URL.createObjectURL(dress.file);
+    setUrl(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [dress.file]);
 
   return (
-    <img
-      src={url}
-      alt={dress.name || dress.file.name}
-      style={{
-        width: "100%",
-        height: 140,
-        objectFit: "cover",
-        borderRadius: 10,
-      }}
-    />
+    <div className="ff-dress-preview">
+      {url && !failed ? (
+        <img
+          src={url}
+          alt={dress.name || dress.file.name}
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="ff-preview-placeholder">
+          <ImagePlus size={28} />
+          <span>{failed ? "Preview unavailable" : "Loading preview"}</span>
+        </div>
+      )}
+      <span className="ff-preview-ready">
+        <CheckCircle2 size={13} />
+        Ready
+      </span>
+    </div>
   );
 }
 
@@ -802,130 +815,130 @@ export default function CustomDressPage() {
                 </label>
               </div>
 
-              {dresses.length > 0 && (
-                <>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginTop: 16,
-                      marginBottom: 12,
-                    }}
-                  >
-                    <strong>
-                      {dresses.length} image(s) selected
-                    </strong>
 
-                    <button
-                      type="button"
-                      className="tryon-reset-button"
-                      disabled={saving}
-                      onClick={() => {
-                        setDresses([]);
-                        setError("");
-                        setUploadProgress(null);
-                      }}
-                    >
-                      <RotateCcw size={15} />
-                      Clear All
-                    </button>
-                  </div>
 
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(170px, 1fr))",
-                      gap: 12,
-                    }}
-                  >
-                    {dresses.map((dress) => (
-                      <div
-                        key={dress.id}
-                        style={{
-                          border:
-                            "1px solid rgba(120,120,120,0.2)",
-                          borderRadius: 12,
-                          padding: 10,
-                          minWidth: 0,
-                        }}
-                      >
-                        <div
-                          style={{
-                            position: "relative",
-                          }}
-                        >
-                          <DressPreview dress={dress} />
+{dresses.length > 0 && (
+  <section className="ff-selected-section">
 
-                          <button
-                            type="button"
-                            aria-label="Remove image"
-                            disabled={saving}
-                            onClick={() =>
-                              removeDress(dress.id)
-                            }
-                            style={{
-                              position: "absolute",
-                              top: 6,
-                              right: 6,
-                              border: 0,
-                              background:
-                                "rgba(0,0,0,0.7)",
-                              color: "white",
-                              borderRadius: "50%",
-                              width: 28,
-                              height: 28,
-                              display: "grid",
-                              placeItems: "center",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <X size={15} />
-                          </button>
-                        </div>
+    <div className="ff-selected-header">
+      <div className="ff-selected-title">
+        <strong>Selected Dresses</strong>
+        <span className="ff-selected-count">
+          {dresses.length} {dresses.length === 1 ? "image" : "images"}
+        </span>
+      </div>
 
-                        <div className="tryon-form-field">
-                          <label
-                            htmlFor={`dress-${dress.id}`}
-                          >
-                            Dress Name
-                          </label>
+      <button
+        type="button"
+        className="ff-clear-button"
+        disabled={saving}
+        onClick={() => {
+          setDresses([]);
+          setError("");
+          setUploadProgress(null);
+        }}
+      >
+        <RotateCcw size={14} />
+        Clear All
+      </button>
+    </div>
 
-                          <input
-                            id={`dress-${dress.id}`}
-                            value={dress.name}
-                            disabled={saving}
-                            maxLength={
-                              MAX_DRESS_NAME || undefined
-                            }
-                            onChange={(event) =>
-                              renameDress(
-                                dress.id,
-                                event.target.value
-                              )
-                            }
-                          />
-                        </div>
+    <div className="ff-table-container">
+      <table className="ff-upload-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Image</th>
+            <th>Dress Name</th>
+            <th>File Size</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
 
-                        <small
-                          style={{
-                            display: "block",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                          title={dress.file.name}
-                        >
-                          {dress.file.name}
-                        </small>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
+        <tbody>
+          {dresses.map((dress, index) => (
+            <tr key={dress.id}>
 
-              <p className="tryon-helper-text">
+              <td className="ff-row-number">
+                {index + 1}
+              </td>
+
+              <td>
+                <div className="ff-table-thumbnail">
+                  <DressPreview dress={dress} />
+                </div>
+              </td>
+
+              <td className="ff-name-cell">
+                <input
+                  aria-label="Dress name"
+                  value={dress.name}
+                  disabled={saving}
+                  maxLength={MAX_DRESS_NAME || undefined}
+                  onChange={(event) =>
+                    renameDress(dress.id, event.target.value)
+                  }
+                />
+
+                <small title={dress.file.name}>
+                  {dress.file.name}
+                </small>
+              </td>
+
+              <td className="ff-size-cell">
+                {(dress.file.size / 1024 / 1024).toFixed(2)} MB
+              </td>
+
+              <td>
+                <span className="ff-table-status">
+                  <CheckCircle2 size={12} />
+                  Ready
+                </span>
+              </td>
+
+              <td>
+                <button
+                  type="button"
+                  className="ff-table-remove"
+                  aria-label="Remove image"
+                  title="Remove image"
+                  disabled={saving}
+                  onClick={() => removeDress(dress.id)}
+                >
+                  <X size={15} />
+                </button>
+              </td>
+
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    {dresses.length < MAX_BULK_IMAGES && (
+      <label className="ff-table-add">
+        <input
+          type="file"
+          accept={ALLOWED_TYPES.join(",")}
+          multiple
+          hidden
+          disabled={saving}
+          onChange={(event) => {
+            addDressFiles(event.target.files);
+            event.target.value = "";
+          }}
+        />
+
+        <ImagePlus size={17} />
+        Add More Images
+      </label>
+    )}
+
+  </section>
+)}
+
+<p className="tryon-helper-text">
                 Every image will be saved as a separate
                 dress in the selected category and can
                 be used for future AI try-ons.

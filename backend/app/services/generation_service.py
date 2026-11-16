@@ -1,3 +1,4 @@
+from app.services.generated_image_storage import GENERATED_IMAGE_EXTENSION
 import os
 
 from datetime import datetime
@@ -118,7 +119,7 @@ def get_generated_output_path(
     return os.path.join(
         "generated",
         str(job_id),
-        f"{view}.png",
+        f"{view}{GENERATED_IMAGE_EXTENSION}",
     )
 
 

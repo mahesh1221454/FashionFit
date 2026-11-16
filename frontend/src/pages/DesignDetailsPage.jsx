@@ -712,6 +712,7 @@ export default function DesignDetailsPage() {
 
 
               <ImageUploader
+                disabled={loading}
                 label="Front View"
 
                 file={
@@ -729,6 +730,7 @@ export default function DesignDetailsPage() {
 
 
               <ImageUploader
+                disabled={loading}
                 label="Left View"
 
                 file={
@@ -746,6 +748,7 @@ export default function DesignDetailsPage() {
 
 
               <ImageUploader
+                disabled={loading}
                 label="Right View"
 
                 file={
@@ -763,6 +766,7 @@ export default function DesignDetailsPage() {
 
 
               <ImageUploader
+                disabled={loading}
                 label="Back View"
 
                 file={
@@ -835,6 +839,86 @@ export default function DesignDetailsPage() {
               )}
 
             </button>
+
+            {loading && (
+              <div
+                className="ff-generation-overlay"
+                role="status"
+                aria-live="polite"
+              >
+                <style>{`
+                  .ff-generation-overlay {
+                    position: fixed;
+                    inset: 0;
+                    z-index: 99999;
+                    background: rgba(15, 23, 42, .45);
+                    backdrop-filter: blur(6px);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 20px;
+                  }
+
+                  .ff-generation-loader-card {
+                    width: min(360px, 95vw);
+                    text-align: center;
+                    background: #ffffff;
+                    border-radius: 22px;
+                    padding: 35px 26px;
+                    box-shadow: 0 20px 70px rgba(0,0,0,.18);
+                  }
+
+                  .ff-generation-loader-spinner {
+                    width: 54px;
+                    height: 54px;
+                    margin: 0 auto 22px;
+                    border: 4px solid #ffedd5;
+                    border-top-color: #f97316;
+                    border-radius: 50%;
+                    animation: ff-job-spin .8s linear infinite;
+                  }
+
+                  .ff-generation-loader-card h3 {
+                    margin: 0 0 10px;
+                    color: #17263c;
+                    font-size: 21px;
+                  }
+
+                  .ff-generation-loader-card p {
+                    color: #64748b;
+                    font-size: 13px;
+                    line-height: 1.7;
+                    margin: 0;
+                  }
+
+                  @keyframes ff-job-spin {
+                    to { transform: rotate(360deg); }
+                  }
+
+                  @media (prefers-reduced-motion: reduce) {
+                    .ff-generation-loader-spinner {
+                      animation-duration: 2s;
+                    }
+                  }
+                `}</style>
+
+                <div className="ff-generation-loader-card">
+                  <div className="ff-generation-loader-spinner" />
+
+                  <h3>Preparing Your Fashion Preview</h3>
+
+                  <p>
+                    Please wait while we prepare your
+                    customer photographs and selected outfit.
+                  </p>
+
+                  <p style={{ marginTop: 12 }}>
+                    Do not refresh or close this page.
+                  </p>
+                </div>
+              </div>
+            )}
+
 
 
           </section>

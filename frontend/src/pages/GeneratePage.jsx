@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useRef,
   useState,
 } from "react";
 
@@ -15,328 +14,244 @@ import {
 
 import GenerationProgress from "../components/GenerationProgress";
 
+const VIEWS = ["front", "left", "right", "back"];
 
 export default function GeneratePage() {
-  const {
-    jobId,
-  } = useParams();
+  const { jobId } = useParams();
 
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [connectionError, setConnectionError] = useState("");
 
-  const [
-    job,
-    setJob,
-  ] = useState(null);
+  const allImagesReady = VIEWS.every(
+    (view) => Boolean(job?.[`output_${view}_url`])
+  );
 
-
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
-
-
-  const [
-    error,
-    setError,
-  ] = useState("");
-
-
-  const intervalRef =
-    useRef(null);
-
+  const completed =
+    job?.status === "completed" && allImagesReady;
 
   useEffect(() => {
+    setJob(null);
+    setLoading(true);
+    setError("");
+    setConnectionError("");
 
     if (!jobId) {
-
-      setError(
-        "Generation job ID is missing."
-      );
-
-      setLoading(
-        false
-      );
-
+      setError("Generation job ID is missing.");
+      setLoading(false);
       return;
-
     }
 
+    let mounted = true;
+    let timer = null;
 
-    let mounted =
-      true;
+    const checkGeneration = async () => {
+      try {
+        const data = await getGeneration(jobId);
 
+        if (!mounted) return;
 
-    const stopPolling =
-      () => {
+        setJob(data);
+        setLoading(false);
+        setConnectionError("");
 
-        if (
-          intervalRef.current
-        ) {
-
-          clearInterval(
-            intervalRef.current
+        if (data.status === "completed") {
+          const ready = VIEWS.every(
+            (view) => Boolean(data[`output_${view}_url`])
           );
 
-          intervalRef.current =
-            null;
+          if (!ready) {
+            setError("Some generated images are unavailable.");
+          }
 
+          // Stop polling. Stay on this page.
+          return;
         }
 
-      };
-
-
-    const checkGeneration =
-      async () => {
-
-        try {
-
-          const data =
-            await getGeneration(
-              jobId
-            );
-
-
-          if (!mounted) {
-            return;
-          }
-
-
-          setJob(
-            data
-          );
-
-
-          setLoading(
-            false
-          );
-
-
-          if (
-            data.status ===
-            "completed"
-          ) {
-
-            stopPolling();
-
-
-            navigate(
-              `/results/${jobId}`,
-              {
-                replace: true,
-              }
-            );
-
-
-            return;
-
-          }
-
-
-          if (
-            data.status ===
-            "failed"
-          ) {
-
-            stopPolling();
-
-
-            setError(
-              data.error_message ||
-              "Generation failed."
-            );
-
-          }
-
-        } catch (error) {
-
-          console.error(
-            "Generation polling error:",
-            error
-          );
-
-
-          if (!mounted) {
-            return;
-          }
-
-
-          setLoading(
-            false
-          );
-
-
+        if (data.status === "failed") {
           setError(
-            "Unable to check generation status."
+            data.error_message || "Generation failed."
           );
 
+          return;
         }
+      } catch (err) {
+        if (!mounted) return;
 
-      };
+        console.error("Generation polling failed:", err);
 
+        setLoading(false);
+
+        setConnectionError(
+          "Connection interrupted. Reconnecting..."
+        );
+
+        if ([401, 403, 404, 410].includes(
+          err?.response?.status
+        )) {
+          setConnectionError("");
+          setError(
+            "This generation session is no longer accessible."
+          );
+          return;
+        }
+      }
+
+      if (mounted) {
+        timer = setTimeout(checkGeneration, 2000);
+      }
+    };
 
     checkGeneration();
 
-
-    intervalRef.current =
-      setInterval(
-        checkGeneration,
-        2000
-      );
-
-
     return () => {
-
-      mounted =
-        false;
-
-
-      stopPolling();
-
+      mounted = false;
+      clearTimeout(timer);
     };
+  }, [jobId]);
 
-  }, [
-    jobId,
-    navigate,
-  ]);
-
-
-  if (
-    error
-  ) {
-
-    return (
-      <div className="generation-page">
-
-        <div className="generation-page-inner">
-
-          <div className="generation-error-card">
-
-            <span className="generation-error-icon">
-              !
-            </span>
-
-
-            <span className="generation-eyebrow">
-              GENERATION INTERRUPTED
-            </span>
-
-
-            <h2>
-              Unable to Create Preview
-            </h2>
-
-
-            <p>
-              {error}
-            </p>
-
-
-            <button
-              className="secondary-button"
-              onClick={() =>
-                navigate("/portal")
-              }
-              type="button"
-            >
-              Choose Another Design
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-    );
-
-  }
-
-
-  const progress =
-    Number(
-      job?.progress || 0
-    );
-
+  const progress = Number(job?.progress || 0);
 
   return (
     <div className="generation-page">
+      <style>{`
+        .ff-generation-next-section {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+          margin-top: 22px;
+          margin-bottom: 80px;
+          padding: 22px;
+          border: 1px solid #e5e7eb;
+          border-radius: 16px;
+          background: #ffffff;
+        }
+
+        .ff-generation-next-section h3 {
+          color: #17263c;
+          font-size: 17px;
+          margin: 0 0 6px;
+        }
+
+        .ff-generation-next-section p {
+          color: #64748b;
+          font-size: 13px;
+          margin: 0;
+        }
+
+        .ff-generation-next-button {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 14px;
+          background: #f97316;
+          color: white;
+          border: none;
+          border-radius: 10px;
+          padding: 14px 25px;
+          font-size: 14px;
+          font-weight: 700;
+          white-space: nowrap;
+          cursor: pointer;
+          transition: background .2s, box-shadow .2s;
+        }
+
+        .ff-generation-next-button:hover {
+          background: #ea580c;
+          box-shadow: 0 5px 16px #f9731633;
+        }
+
+        .ff-generation-error {
+          margin-top: 18px;
+          padding: 20px;
+          background: #fef2f2;
+          color: #b91c1c;
+          border-radius: 12px;
+        }
+
+        @media (max-width: 600px) {
+          .ff-generation-next-section {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .ff-generation-next-button {
+            width: 100%;
+          }
+        }
+      `}</style>
 
       <div className="generation-background-glow generation-glow-one" />
-
       <div className="generation-background-glow generation-glow-two" />
 
-
       <div className="generation-page-inner">
-
-        <GenerationProgress job={job}
-          progress={
-            loading
-              ? 0
-              : progress
-          }
+        <GenerationProgress
+          job={job}
+          progress={loading ? 0 : progress}
           status={
-            getStatusText(
-              job?.status,
-              progress
-            )
+            completed
+              ? "Your fashion preview is ready"
+              : "Generating your fashion preview"
           }
         />
 
-      </div>
+        {connectionError && (
+          <p
+            role="status"
+            style={{
+              color: "#b45309",
+              textAlign: "center",
+              padding: 12,
+            }}
+          >
+            {connectionError}
+          </p>
+        )}
 
+        {error && (
+          <div className="ff-generation-error">
+            <h3>Unable to complete generation</h3>
+
+            <p>{error}</p>
+
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => navigate("/portal")}
+            >
+              Choose Another Design
+            </button>
+          </div>
+        )}
+
+        {completed && !error && (
+          <div className="ff-generation-next-section">
+            <div>
+              <h3>Ready for the next step?</h3>
+
+              <p>
+                Review your four generated images
+                and continue to body measurements.
+              </p>
+            </div>
+
+            <button
+              className="ff-generation-next-button"
+              type="button"
+              onClick={() =>
+                navigate(`/results/${jobId}`)
+              }
+            >
+              Next
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
-
-
-function getStatusText(
-  status,
-  progress
-) {
-  if (
-    status === "pending"
-  ) {
-    return "Preparing customer photographs";
-  }
-
-
-  if (
-    status === "processing"
-  ) {
-
-    if (
-      progress < 20
-    ) {
-      return "Preparing visual references";
-    }
-
-
-    if (
-      progress < 45
-    ) {
-      return "Creating the front view";
-    }
-
-
-    if (
-      progress < 65
-    ) {
-      return "Creating side views";
-    }
-
-
-    if (
-      progress < 85
-    ) {
-      return "Creating the back view";
-    }
-
-
-    return "Applying final refinements";
-
-  }
-
-
-  return "Preparing your fashion preview";
 }

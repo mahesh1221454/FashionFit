@@ -242,6 +242,7 @@ def generate_view(
         view,
         str(job.id),
                  usage_job_id=str(job.id),
+        identity_image_path=job.front_image_url,
              )
 
     output_url = result.get(

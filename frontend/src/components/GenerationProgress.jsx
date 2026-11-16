@@ -41,13 +41,26 @@ function PreviewCard({ view, job, activeKey, failed, onPreview }) {
     <article className={`ffg-card ffg-${state}`}>
       <div className="ffg-image-area">
         {ready && !imageError ? (
-          <img
-            src={url}
-            alt={`Generated ${view.label}`}
-            loading="eager"
-            decoding="async"
-            onError={() => setImageError(true)}
-          />
+          <button
+  type="button"
+  className="ffg-clickable-image"
+  aria-label={`Open ${view.label} image`}
+  onClick={() =>
+    onPreview({
+      key: view.key,
+      url,
+      label: view.label,
+    })
+  }
+>
+  <img
+    src={url}
+    alt={`Generated ${view.label}`}
+    loading="eager"
+    decoding="async"
+    onError={() => setImageError(true)}
+  />
+</button>
         ) : (
           <div className="ffg-placeholder">
             {active ? (
@@ -71,16 +84,7 @@ function PreviewCard({ view, job, activeKey, failed, onPreview }) {
           </div>
         )}
 
-        {ready && !imageError && (
-          <button
-            type="button"
-            className="ffg-preview-button"
-            onClick={() => onPreview({ url, label: view.label })}
-            aria-label={`Preview ${view.label}`}
-          >
-            <span aria-hidden="true">⤢</span> Preview
-          </button>
-        )}
+
       </div>
 
       <div className="ffg-card-info">
@@ -112,6 +116,30 @@ export default function GenerationProgress({
 }) {
   const [preview, setPreview] = useState(null);
 
+  const availablePreviews = VIEWS
+    .map(({ key, label }) => ({
+      key,
+      label,
+      url: job?.[`output_${key}_url`],
+    }))
+    .filter((item) => Boolean(item.url));
+
+  const currentPreviewIndex = availablePreviews.findIndex(
+    (item) => item.key === preview?.key
+  );
+
+  const movePreview = (direction) => {
+    if (availablePreviews.length < 2) return;
+
+    const nextIndex = (
+      currentPreviewIndex +
+      direction +
+      availablePreviews.length
+    ) % availablePreviews.length;
+
+    setPreview(availablePreviews[nextIndex]);
+  };
+
   const failed = job?.status === "failed";
   const readyCount = VIEWS.filter(
     ({ key }) => Boolean(job?.[`output_${key}_url`])
@@ -139,6 +167,14 @@ export default function GenerationProgress({
       if (event.key === "Escape") {
         setPreview(null);
       }
+
+      if (event.key === "ArrowLeft") {
+        movePreview(-1);
+      }
+
+      if (event.key === "ArrowRight") {
+        movePreview(1);
+      }
     }
 
     document.addEventListener("keydown", handleEscape);
@@ -146,7 +182,7 @@ export default function GenerationProgress({
     return () => {
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [preview]);
+  }, [preview, job]);
 
   return (
     <div className="ffg-wrapper">
@@ -537,7 +573,247 @@ export default function GenerationProgress({
             animation: none;
           }
         }
-      `}</style>
+
+
+        .ffg-image-area img {
+          cursor: default;
+        }
+
+        .ffg-modal-content {
+          width: min(96vw, 1100px);
+          max-height: 94vh;
+          gap: 10px;
+          overflow-y: auto;
+          background: #ffffff;
+          padding: 18px;
+          border-radius: 20px;
+          color: #17263c;
+        }
+
+        .ffg-modal-heading {
+          color: #17263c;
+          padding-bottom: 10px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .ffg-close-button {
+          background: #f1f5f9;
+          color: #334155;
+          border-color: #e5e7eb;
+        }
+
+        .ffg-preview-stage {
+          display: grid;
+          grid-template-columns: 40px minmax(0, 1fr) 40px;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .ffg-preview-stage img {
+          display: block;
+          width: 100%;
+          height: min(62vh, 650px);
+          object-fit: contain;
+          background: white;
+          cursor: default;
+        }
+
+        .ffg-preview-arrow {
+          height: 40px;
+          width: 40px;
+          border: 1px solid #e5e7eb;
+          border-radius: 50%;
+          background: white;
+          color: #f97316;
+          font-size: 28px;
+          cursor: pointer;
+        }
+
+        .ffg-preview-arrow:hover {
+          background: #fff7ed;
+          border-color: #f97316;
+        }
+
+        .ffg-preview-arrow:disabled {
+          opacity: .4;
+          cursor: not-allowed;
+        }
+
+        .ffg-preview-navigation {
+          display: flex;
+          justify-content: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .ffg-preview-thumbnail {
+          width: 80px;
+          padding: 5px;
+          border: 2px solid #e5e7eb;
+          border-radius: 9px;
+          background: white;
+          cursor: pointer;
+          color: #64748b;
+          font-size: 10px;
+        }
+
+        .ffg-preview-thumbnail img {
+          display: block;
+          width: 100%;
+          height: 64px;
+          object-fit: contain;
+        }
+
+        .ffg-preview-thumbnail.active {
+          border-color: #f97316;
+          background: #fff7ed;
+          color: #ea580c;
+        }
+
+        /* FASHIONFIT_COMPACT_RESULTS */
+
+        .generation-page-inner:has(.ffg-wrapper) {
+          max-width: 760px;
+        }
+
+        .ffg-wrapper {
+          max-width: 760px;
+          padding: 18px;
+          border-radius: 16px;
+        }
+
+        .ffg-header {
+          margin-bottom: 14px;
+          gap: 10px;
+        }
+
+        .ffg-header h2 {
+          font-size: 21px;
+        }
+
+        .ffg-header p {
+          font-size: 11px;
+        }
+
+        .ffg-icon {
+          width: 38px;
+          height: 38px;
+          font-size: 20px;
+          border-radius: 10px;
+        }
+
+        .ffg-counter {
+          padding: 6px 12px;
+          font-size: 12px;
+        }
+
+        .ffg-progress {
+          height: 5px;
+          margin-bottom: 15px;
+        }
+
+        .ffg-grid {
+          gap: 12px;
+        }
+
+        .ffg-card {
+          border-radius: 12px;
+        }
+
+        .ffg-image-area {
+          height: clamp(180px, 27vh, 280px);
+          background: #ffffff;
+        }
+
+        .ffg-image-area img {
+          object-fit: contain;
+          cursor: default;
+        }
+
+        .ffg-card-info {
+          padding: 9px 12px;
+          gap: 8px;
+        }
+
+        .ffg-card-info h3 {
+          font-size: 13px;
+          margin: 0 0 3px;
+        }
+
+        .ffg-card-status {
+          font-size: 10px;
+        }
+
+        .ffg-state-indicator {
+          width: 24px;
+          height: 24px;
+          font-size: 12px;
+        }
+
+        .ffg-preview-button {
+          right: 8px;
+          bottom: 8px;
+          padding: 6px 10px;
+          font-size: 11px;
+          border-radius: 7px;
+        }
+
+        .ffg-footer-note {
+          margin-top: 12px;
+          font-size: 11px;
+        }
+
+        @media (max-width: 600px) {
+          .ffg-wrapper {
+            padding: 12px;
+          }
+
+          .ffg-image-area {
+            height: 200px;
+          }
+        }
+
+
+        .ffg-clickable-image,
+        .ffg-clickable-image:hover,
+        .ffg-clickable-image:active {
+          display: block;
+          width: 100%;
+          height: 100%;
+          padding: 0;
+          margin: 0;
+          border: none;
+          border-radius: 0;
+          background: transparent !important;
+          box-shadow: none !important;
+          cursor: pointer;
+          transform: none !important;
+        }
+
+        .ffg-clickable-image img,
+        .ffg-clickable-image:hover img {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          cursor: pointer !important;
+          opacity: 1 !important;
+          filter: none !important;
+          transform: none !important;
+        }
+
+        .ffg-clickable-image::before,
+        .ffg-clickable-image::after {
+          display: none !important;
+          content: none !important;
+        }
+
+        .ffg-clickable-image:focus-visible {
+          outline: 2px solid #f97316;
+          outline-offset: -3px;
+        }
+
+`}</style>
 
       <div className="ffg-header">
         <div className="ffg-title-area">
@@ -595,7 +871,7 @@ export default function GenerationProgress({
           ? "Your four-view fashion preview is complete."
           : failed
             ? "Some previews could not be generated."
-            : "Each completed image appears automatically. Select Preview to enlarge it."}
+            : "Each completed image appears automatically. Click any image to enlarge it."}
       </p>
 
       {preview && (
@@ -621,10 +897,55 @@ export default function GenerationProgress({
                 ✕ Close
               </button>
             </div>
-            <img
-              src={preview.url}
-              alt={`Full-size ${preview.label}`}
-            />
+            <div className="ffg-preview-stage">
+              <button
+                type="button"
+                className="ffg-preview-arrow"
+                aria-label="Previous image"
+                disabled={availablePreviews.length < 2}
+                onClick={() => movePreview(-1)}
+              >
+                {"\u2039"}
+              </button>
+
+              <img
+                src={preview.url}
+                alt={preview.label}
+                style={{
+                  cursor: "default",
+                  objectFit: "contain",
+                }}
+              />
+
+              <button
+                type="button"
+                className="ffg-preview-arrow"
+                aria-label="Next image"
+                disabled={availablePreviews.length < 2}
+                onClick={() => movePreview(1)}
+              >
+                {"\u203A"}
+              </button>
+            </div>
+
+            <div className="ffg-preview-navigation">
+              {availablePreviews.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={
+                    "ffg-preview-thumbnail " +
+                    (preview.key === item.key ? "active" : "")
+                  }
+                  aria-label={`Preview ${item.label}`}
+                  aria-pressed={preview.key === item.key}
+                  onClick={() => setPreview(item)}
+                >
+                  <img src={item.url} alt={item.label} />
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

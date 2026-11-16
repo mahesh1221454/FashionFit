@@ -232,6 +232,7 @@ def process_temporary_generation(session_id):
                 str(folder / f"{view}.webp"),
                 view,
                 session_id,
+                identity_image_path=str(folder / "front.webp"),
             )
 
             if not result.get("image_url"):

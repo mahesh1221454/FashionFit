@@ -1,4 +1,4 @@
-import {
+﻿import {
   useEffect,
   useState,
 } from "react";
@@ -12,7 +12,7 @@ import {
   jsPDF,
 } from "jspdf";
 
-import ResultCard from "../components/ResultCard";
+
 
 import {
   getGeneration,
@@ -891,6 +891,193 @@ export default function ResultsPage() {
 
   return (
     <div className="results-page">
+<style>{`
+  .results-page .results-shell {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .results-page .results-workspace {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100%;
+    gap: 24px;
+  }
+
+  .results-page .generated-results-section {
+    width: 100% !important;
+    min-width: 0;
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .results-page .small-results-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .results-page .clickable-result {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #ffffff;
+    cursor: pointer;
+    padding: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: border-color .2s ease;
+  }
+
+  .results-page .clickable-result:hover {
+    border-color: #f97316;
+  }
+
+  .results-page .result-photo-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: clamp(320px, 48vh, 620px);
+    background: #f8f9fa;
+    overflow: hidden;
+  }
+
+  .results-page .result-photo-stage img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain !important;
+    object-position: center;
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+  }
+
+  .results-page .result-photo-label {
+    display: block;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 650;
+    padding: 12px;
+    border-top: 1px solid #e5e7eb;
+    color: #17243b;
+  }
+
+  .results-page .measurement-panel {
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 18px;
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .results-page .measurement-panel > .panel-head {
+    grid-column: 1 / -1;
+  }
+
+  .results-page .measurement-section {
+    min-width: 0;
+    width: 100%;
+    padding: 16px;
+    margin: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+  }
+
+  .results-page .measurement-fields {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .results-page .measurement-field {
+    min-width: 0;
+  }
+
+  .results-page .measurement-input-wrapper input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .results-page .results-bottom-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    padding: 22px 0;
+  }
+
+  .results-page .download-pdf-button {
+    min-height: 45px;
+    padding: 12px 28px;
+    border-radius: 10px;
+    font-weight: 650;
+  }
+
+  @media (max-width: 900px) {
+    .results-page .measurement-fields {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .results-page .result-photo-stage {
+      height: clamp(260px, 42vh, 450px);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .results-page .results-shell {
+      width: 100%;
+      padding: 10px;
+    }
+
+    .results-page .generated-results-section,
+    .results-page .measurement-panel {
+      padding: 12px;
+    }
+
+    .results-page .small-results-grid {
+      gap: 8px;
+    }
+
+    .results-page .result-photo-stage {
+      height: clamp(170px, 58vw, 300px);
+    }
+
+    .results-page .result-photo-label {
+      font-size: 12px;
+      padding: 9px;
+    }
+
+    .results-page .measurement-panel {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .results-page .measurement-fields {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .results-page .results-bottom-actions button {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .results-page .measurement-fields {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+`}</style>
 
       <div className="results-shell">
 
@@ -970,45 +1157,242 @@ export default function ResultsPage() {
 
 
             <div className="small-results-grid">
+  {previewImages.map((item, index) => (
+    <button
+      type="button"
+      className="clickable-result"
+      key={item.title}
+      aria-label={`Inspect ${item.title}`}
+      disabled={!item.image}
+      onClick={() => setPreviewIndex(index)}
+    >
+      <div className="result-photo-stage">
+        {item.image ? (
+          <img
+            src={item.image}
+            alt={item.title}
+            draggable={false}
+          />
+        ) : (
+          <span>Image unavailable</span>
+        )}
+      </div>
 
-              {previewImages.map(
-                (
-                  item,
-                  index
-                ) => (
-
-                  <div
-                    className="clickable-result"
-                    key={
-                      item.title
-                    }
-                    onClick={() =>
-                      setPreviewIndex(
-                        index
-                      )
-                    }
-                  >
-
-                    <ResultCard
-                      title={
-                        item.title
-                      }
-                      image={
-                        item.image
-                      }
-                    />
-
-                  </div>
-
-                )
-              )}
-
-            </div>
-
-          </section>
+      <span className="result-photo-label">
+        {item.title}
+      </span>
+    </button>
+  ))}
+</div>
+</section>
 
 
           <aside className="measurement-panel">
+
+<style>{`
+  /* PREMIUM TAILORING MEASUREMENTS */
+
+  .measurement-panel {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 24px !important;
+    padding: 26px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 20px !important;
+    align-items: stretch !important;
+  }
+
+  .measurement-panel .panel-head {
+    grid-column: 1 / -1;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 0 !important;
+  }
+
+  .measurement-panel .panel-badge {
+    display: inline-flex !important;
+    width: fit-content !important;
+    background: #fff1e6 !important;
+    color: #c2410c !important;
+    padding: 7px 12px !important;
+    border-radius: 6px;
+    font-size: 11px !important;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+  }
+
+  .measurement-panel .panel-head h2 {
+    color: #17243b !important;
+    font-size: 26px !important;
+    font-weight: 750 !important;
+    margin: 12px 0 6px !important;
+  }
+
+  .measurement-panel .panel-head p {
+    color: #475569 !important;
+    font-size: 14px !important;
+  }
+
+  .measurement-panel .measurement-section {
+    padding: 22px !important;
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 14px !important;
+    margin: 0 !important;
+    min-width: 0;
+  }
+
+  .measurement-panel .measurement-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px !important;
+    font-weight: 750 !important;
+    color: #17243b !important;
+    padding: 0 0 16px !important;
+    margin: 0 0 18px !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+  }
+
+  .measurement-panel .measurement-section h3::before {
+    content: "";
+    display: inline-block;
+    width: 5px;
+    height: 22px;
+    background: #f97316;
+    border-radius: 4px;
+  }
+
+  .measurement-panel .measurement-fields {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px 16px !important;
+  }
+
+  .measurement-panel .measurement-field {
+    min-width: 0;
+  }
+
+  .measurement-panel .measurement-field label {
+    display: block !important;
+    color: #334155 !important;
+    font-size: 13px !important;
+    font-weight: 650 !important;
+    line-height: 1.5;
+    margin-bottom: 7px !important;
+  }
+
+  .measurement-panel .measurement-input-wrapper {
+    display: flex !important;
+    align-items: center;
+    position: relative;
+    background: #ffffff !important;
+    border: 1.5px solid #94a3b8 !important;
+    border-radius: 9px !important;
+    min-height: 46px !important;
+    overflow: hidden;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .measurement-panel .measurement-input-wrapper:hover {
+    border-color: #64748b !important;
+  }
+
+  .measurement-panel .measurement-input-wrapper:focus-within {
+    border-color: #f97316 !important;
+    box-shadow: 0 0 0 3px rgba(249,115,22,.13) !important;
+  }
+
+  .measurement-panel .measurement-input-wrapper input {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    padding: 10px 44px 10px 14px !important;
+    background: transparent !important;
+    color: #17243b !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    font-variant-numeric: tabular-nums;
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .measurement-panel .measurement-input-wrapper input::placeholder {
+    color: #64748b !important;
+    opacity: 1 !important;
+  }
+
+  .measurement-panel .measurement-input-wrapper span {
+    position: absolute !important;
+    right: 7px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: #eef2f7 !important;
+    color: #475569 !important;
+    padding: 5px 8px !important;
+    border-radius: 5px;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    pointer-events: none;
+  }
+
+  .results-bottom-actions {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 14px !important;
+    padding: 22px 12px !important;
+  }
+
+  .results-bottom-actions .download-pdf-button {
+    min-height: 48px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    background: #ea580c !important;
+    color: #ffffff !important;
+    border-radius: 10px !important;
+  }
+
+  .results-bottom-actions .download-pdf-button:hover {
+    background: #c2410c !important;
+  }
+
+  @media (max-width: 900px) {
+    .measurement-panel {
+      grid-template-columns: minmax(0, 1fr) !important;
+      padding: 18px !important;
+      gap: 16px !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .measurement-panel {
+      padding: 14px !important;
+    }
+
+    .measurement-panel .measurement-section {
+      padding: 14px !important;
+    }
+
+    .measurement-panel .measurement-fields {
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 14px !important;
+    }
+
+    .measurement-panel .panel-head h2 {
+      font-size: 21px !important;
+    }
+
+    .results-bottom-actions button {
+      width: 100% !important;
+    }
+  }
+
+`}</style>
+
 
             <div className="panel-head">
 
@@ -1032,7 +1416,7 @@ export default function ResultsPage() {
 
 
             <MeasurementSection
-              title="Top Measurements"
+              title="Upper Body Measurements"
               measurements={
                 measurements
               }
@@ -1089,7 +1473,7 @@ export default function ResultsPage() {
 
 
             <MeasurementSection
-              title="Bottom Measurements"
+              title="Lower Body Measurements"
               measurements={
                 measurements
               }
@@ -1205,7 +1589,7 @@ export default function ResultsPage() {
                   }
                   type="button"
                 >
-                  ×
+                  &#215;
                 </button>
 
 
@@ -1216,7 +1600,7 @@ export default function ResultsPage() {
                   }
                   type="button"
                 >
-                  ‹
+                  &#8249;
                 </button>
 
 
@@ -1227,7 +1611,7 @@ export default function ResultsPage() {
                   }
                   type="button"
                 >
-                  ›
+                  &#8250;
                 </button>
 
               </div>
@@ -1352,3 +1736,6 @@ function MeasurementSection({
     </div>
   );
 }
+
+
+

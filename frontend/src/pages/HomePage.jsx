@@ -1,4 +1,3 @@
-
 import {
   useCallback,
   useEffect,
@@ -85,16 +84,16 @@ function AdminLoginDialog({
   }, [loading, onClose]);
 
   return (
-    <div className="cm-backdrop">
+    <div className="cm-backdrop backdrop-blur-md bg-black/80 transition-all duration-300">
       <div
-        className="cm-dialog cm-login-dialog"
+        className="cm-dialog cm-login-dialog bg-zinc-900 border border-zinc-800 text-zinc-100 shadow-2xl rounded-2xl p-8 max-w-md w-full relative"
         role="dialog"
         aria-modal="true"
         aria-labelledby="cm-login-title"
       >
         <button
           type="button"
-          className="cm-close"
+          className="cm-close absolute top-5 right-5 text-zinc-400 hover:text-white transition-colors bg-zinc-800/50 p-2 rounded-full"
           onClick={onClose}
           disabled={loading}
           aria-label="Close"
@@ -102,15 +101,15 @@ function AdminLoginDialog({
           <X size={18} />
         </button>
 
-        <div className="cm-icon cm-icon-orange">
+        <div className="cm-icon cm-icon-orange w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-6">
           <LockKeyhole size={23} />
         </div>
 
-        <span className="cm-eyebrow">
+        <span className="cm-eyebrow text-xs font-semibold uppercase tracking-wider text-amber-400/90 mb-1 block">
           SECURE COLLECTION ACCESS
         </span>
-        <h2 id="cm-login-title">Administrator Login</h2>
-        <p className="cm-description">
+        <h2 id="cm-login-title" className="text-2xl font-bold tracking-tight text-white mb-2">Administrator Login</h2>
+        <p className="cm-description text-sm text-zinc-400 mb-6">
           Sign in to access collection management,
           dashboard statistics and administrator tools.
         </p>
@@ -121,8 +120,8 @@ function AdminLoginDialog({
             onLogin({ username, password });
           }}
         >
-          <label className="cm-form-field">
-            <span>Username</span>
+          <label className="cm-form-field block mb-4">
+            <span className="block text-xs font-medium text-zinc-300 mb-1.5">Username</span>
             <input
               ref={inputRef}
               type="text"
@@ -133,11 +132,12 @@ function AdminLoginDialog({
               maxLength={150}
               disabled={loading}
               placeholder="Administrator username"
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all"
             />
           </label>
 
-          <label className="cm-form-field">
-            <span>Password</span>
+          <label className="cm-form-field block mb-6">
+            <span className="block text-xs font-medium text-zinc-300 mb-1.5">Password</span>
             <input
               type="password"
               autoComplete="current-password"
@@ -146,17 +146,18 @@ function AdminLoginDialog({
               required
               disabled={loading}
               placeholder="Administrator password"
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all"
             />
           </label>
 
           {error && (
-            <div className="cm-error" role="alert">{error}</div>
+            <div className="cm-error bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-xs mb-6 flex items-center gap-2" role="alert">{error}</div>
           )}
 
-          <div className="cm-dialog-actions">
+          <div className="cm-dialog-actions flex items-center justify-end gap-3 pt-2">
             <button
               type="button"
-              className="cm-btn cm-btn-outline"
+              className="cm-btn cm-btn-outline px-5 py-2.5 rounded-xl text-sm font-medium border border-zinc-700 text-zinc-300 hover:bg-zinc-800 transition-colors"
               disabled={loading}
               onClick={onClose}
             >
@@ -165,11 +166,11 @@ function AdminLoginDialog({
 
             <button
               type="submit"
-              className="cm-btn cm-btn-primary"
+              className="cm-btn cm-btn-primary px-5 py-2.5 rounded-xl text-sm font-medium bg-amber-500 hover:bg-amber-400 text-zinc-950 transition-colors flex items-center gap-2 font-semibold disabled:opacity-50"
               disabled={loading}
             >
               {loading ? (
-                <LoaderCircle size={16} className="cm-spinner" />
+                <LoaderCircle size={16} className="cm-spinner animate-spin" />
               ) : (
                 <KeyRound size={16} />
               )}
@@ -178,8 +179,8 @@ function AdminLoginDialog({
           </div>
         </form>
 
-        <div className="cm-login-footnote">
-          <ShieldCheck size={15} />
+        <div className="cm-login-footnote mt-6 pt-6 border-t border-zinc-800/80 flex items-center gap-2 text-xs text-zinc-500">
+          <ShieldCheck size={15} className="text-amber-400/70" />
           Authentication is verified by FastAPI.
         </div>
       </div>
@@ -208,16 +209,16 @@ function TrashConfirmation({
   }, [processing, onClose]);
 
   return (
-    <div className="cm-backdrop">
+    <div className="cm-backdrop backdrop-blur-md bg-black/80 transition-all duration-300">
       <div
-        className="cm-dialog cm-trash-dialog"
+        className="cm-dialog cm-trash-dialog bg-zinc-900 border border-zinc-800 text-zinc-100 shadow-2xl rounded-2xl p-8 max-w-lg w-full relative"
         role="dialog"
         aria-modal="true"
         aria-labelledby="cm-trash-title"
       >
         <button
           type="button"
-          className="cm-close"
+          className="cm-close absolute top-5 right-5 text-zinc-400 hover:text-white transition-colors bg-zinc-800/50 p-2 rounded-full"
           disabled={processing}
           onClick={onClose}
           aria-label="Close"
@@ -225,47 +226,49 @@ function TrashConfirmation({
           <X size={18} />
         </button>
 
-        <div className="cm-dialog-header">
-          <div className="cm-icon cm-icon-danger">
+        <div className="cm-dialog-header flex items-center gap-4 mb-4">
+          <div className="cm-icon cm-icon-danger w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0">
             <Trash2 size={21} />
           </div>
           <div>
-            <span className="cm-eyebrow">
+            <span className="cm-eyebrow text-xs font-semibold uppercase tracking-wider text-red-400 mb-0.5 block">
               COLLECTION MANAGEMENT
             </span>
-            <h2 id="cm-trash-title">Move to Trash?</h2>
+            <h2 id="cm-trash-title" className="text-2xl font-bold tracking-tight text-white">Move to Trash?</h2>
           </div>
         </div>
 
-        <p className="cm-description">
-          Move <strong>{dresses.length}</strong>{" "}
+        <p className="cm-description text-sm text-zinc-400 mb-6">
+          Move <strong className="text-white font-semibold">{dresses.length}</strong>{" "}
           {dresses.length === 1 ? "dress" : "dresses"}
           {" "}out of the active gallery.
         </p>
 
-        <div className="cm-selected-panel">
-          <div className="cm-selected-heading">
+        <div className="cm-selected-panel bg-zinc-950 border border-zinc-800/80 rounded-xl p-4 mb-6">
+          <div className="cm-selected-heading flex items-center justify-between pb-3 mb-3 border-b border-zinc-800 text-xs font-medium text-zinc-400">
             <strong>Selected Dresses</strong>
-            <span>{dresses.length}</span>
+            <span className="bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-300">{dresses.length}</span>
           </div>
 
-          <div className="cm-selected-list">
+          <div className="cm-selected-list max-h-48 overflow-y-auto space-y-2 pr-1">
             {dresses.map((dress) => (
-              <div className="cm-selected-item" key={dress.id}>
-                <img src={dress.image_url} alt="" />
-                <div>
-                  <strong>{dress.name}</strong>
-                  <small>{dress.design_code}</small>
+              <div className="cm-selected-item flex items-center justify-between gap-3 bg-zinc-900/60 p-2 rounded-lg border border-zinc-800/50" key={dress.id}>
+                <div className="flex items-center gap-3">
+                  <img src={dress.image_url} alt="" className="w-10 h-10 object-cover rounded-md border border-zinc-800" />
+                  <div>
+                    <strong className="block text-xs font-semibold text-white truncate max-w-[200px]">{dress.name}</strong>
+                    <small className="text-[10px] text-zinc-500">{dress.design_code}</small>
+                  </div>
                 </div>
-                <Check size={16} />
+                <Check size={16} className="text-amber-400 shrink-0" />
               </div>
             ))}
           </div>
         </div>
 
-        <div className="cm-information">
-          <ShieldCheck size={19} />
-          <p>
+        <div className="cm-information bg-zinc-950/60 border border-zinc-800/50 rounded-xl p-4 flex items-start gap-3 mb-6 text-xs text-zinc-400">
+          <ShieldCheck size={19} className="text-amber-400 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
             Image files and existing AI generation records
             are preserved. You can restore these dresses
             from the Trash Bin later.
@@ -273,25 +276,29 @@ function TrashConfirmation({
         </div>
 
         {processing && progress && (
-          <div className="cm-progress">
-            <span>
-              Processing {progress.completed} of {progress.total}
-            </span>
+          <div className="cm-progress mb-6">
+            <div className="flex justify-between text-xs text-zinc-400 mb-1.5">
+              <span>
+                Processing {progress.completed} of {progress.total}
+              </span>
+              <span>{Math.round((progress.completed / progress.total) * 100)}%</span>
+            </div>
             <progress
               max={progress.total}
               value={progress.completed}
+              className="w-full h-2 rounded-full overflow-hidden bg-zinc-950 accent-amber-500"
             />
           </div>
         )}
 
         {error && (
-          <div className="cm-error" role="alert">{error}</div>
+          <div className="cm-error bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-xs mb-6" role="alert">{error}</div>
         )}
 
-        <div className="cm-dialog-actions">
+        <div className="cm-dialog-actions flex items-center justify-end gap-3">
           <button
             type="button"
-            className="cm-btn cm-btn-outline"
+            className="cm-btn cm-btn-outline px-5 py-2.5 rounded-xl text-sm font-medium border border-zinc-700 text-zinc-300 hover:bg-zinc-800 transition-colors"
             disabled={processing}
             onClick={onClose}
           >
@@ -299,12 +306,12 @@ function TrashConfirmation({
           </button>
           <button
             type="button"
-            className="cm-btn cm-btn-danger"
+            className="cm-btn cm-btn-danger px-5 py-2.5 rounded-xl text-sm font-medium bg-red-600 hover:bg-red-500 text-white transition-colors flex items-center gap-2 font-semibold disabled:opacity-50"
             disabled={processing || dresses.length === 0}
             onClick={onConfirm}
           >
             {processing ? (
-              <LoaderCircle size={16} className="cm-spinner" />
+              <LoaderCircle size={16} className="cm-spinner animate-spin" />
             ) : (
               <Trash2 size={16} />
             )}
@@ -959,7 +966,7 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="portal-layout">
+      <div className="portal-layout min-h-screen bg-zinc-950 text-zinc-100 flex flex-col md:flex-row antialiased selection:bg-amber-500/30 selection:text-amber-200">
         <Sidebar
           categories={categories}
           selectedCategory={selectedCategory}
@@ -968,9 +975,9 @@ export default function HomePage() {
 
         <main
           className={
-            "portal-content" +
+            "portal-content flex-1 flex flex-col min-w-0 p-6 md:p-10 transition-all duration-300" +
             (manageMode
-              ? " collection-managing-content"
+              ? " collection-managing-content pb-28"
               : "")
           }
         >
@@ -1005,14 +1012,14 @@ export default function HomePage() {
             />
           ) : (
             <>
-              <div className="page-header collection-page-header">
+              <div className="page-header collection-page-header flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 pb-6 border-b border-zinc-800/80">
                 <div className="collection-header-copy">
-                  <span>Explore Collection</span>
-                  <h1>
+                  <span className="text-xs font-semibold uppercase tracking-widest text-amber-400 mb-2 block">Explore Collection</span>
+                  <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2 font-serif">
                     {selectedCategory?.name ||
                       "Fashion Collection"}
                   </h1>
-                  <p>
+                  <p className="text-sm text-zinc-400 max-w-xl">
                     {manageMode
                       ? "Select dresses to edit, move, hide or manage."
                       : "Select a design to create your personalized AI fashion preview."}
@@ -1020,14 +1027,14 @@ export default function HomePage() {
                 </div>
 
                 {selectedCategory && !loading && (
-                  <div className="cm-header-actions">
+                  <div className="cm-header-actions flex flex-wrap items-center gap-3">
                     {adminToken && sessionValid() && (
                       <button
                         type="button"
-                        className="cm-logout-button"
+                        className="cm-logout-button inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-4 py-2.5 rounded-xl text-xs font-medium text-zinc-300 hover:text-white transition-all shadow-sm"
                         onClick={handleLogout}
                       >
-                        <LogOut size={15} />
+                        <LogOut size={15} className="text-zinc-400" />
                         Sign Out
                       </button>
                     )}
@@ -1036,34 +1043,34 @@ export default function HomePage() {
                       <>
                         <button
                           type="button"
-                          className="collection-manage-button"
+                          className="collection-manage-button inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-4 py-2.5 rounded-xl text-xs font-medium text-zinc-300 hover:text-white transition-all shadow-sm"
                           onClick={() =>
                             openManagementView("dashboard")
                           }
                         >
-                          <LayoutDashboard size={16} />
+                          <LayoutDashboard size={16} className="text-amber-400" />
                           Dashboard
                         </button>
 
                         <button
                           type="button"
-                          className="collection-manage-button"
+                          className="collection-manage-button inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-4 py-2.5 rounded-xl text-xs font-medium text-zinc-300 hover:text-white transition-all shadow-sm"
                           onClick={() =>
                             openManagementView("hidden")
                           }
                         >
-                          <EyeOff size={16} />
+                          <EyeOff size={16} className="text-amber-400" />
                           Hidden Dresses
                         </button>
 
                         <button
                           type="button"
-                          className="collection-manage-button"
+                          className="collection-manage-button inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-4 py-2.5 rounded-xl text-xs font-medium text-zinc-300 hover:text-white transition-all shadow-sm"
                           onClick={() =>
                             openManagementView("trash")
                           }
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={16} className="text-red-400" />
                           Trash Bin
                         </button>
                       </>
@@ -1072,8 +1079,10 @@ export default function HomePage() {
                     <button
                       type="button"
                       className={
-                        "collection-manage-button" +
-                        (manageMode ? " active" : "")
+                        "collection-manage-button inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-sm " +
+                        (manageMode 
+                          ? "bg-amber-500 text-zinc-950 hover:bg-amber-400 font-bold" 
+                          : "bg-zinc-900 border border-zinc-800 text-zinc-200 hover:bg-zinc-800 hover:border-zinc-700")
                       }
                       onClick={handleManageClick}
                     >
@@ -1084,7 +1093,7 @@ export default function HomePage() {
                         </>
                       ) : (
                         <>
-                          <Settings2 size={17} />
+                          <Settings2 size={17} className="text-amber-400" />
                           Manage Collection
                         </>
                       )}
@@ -1095,15 +1104,18 @@ export default function HomePage() {
 
               {notice && (
                 <div
-                  className="cm-success-message"
+                  className="cm-success-message bg-amber-500/10 border border-amber-500/20 text-amber-300 px-4 py-3 rounded-xl mb-6 flex items-center justify-between text-xs shadow-lg backdrop-blur-sm animate-fadeIn"
                   role="status"
                 >
-                  <Check size={18} />
-                  <span>{notice}</span>
+                  <div className="flex items-center gap-2.5">
+                    <Check size={18} className="text-amber-400 shrink-0" />
+                    <span className="font-medium">{notice}</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setNotice("")}
                     aria-label="Dismiss"
+                    className="text-amber-400 hover:text-amber-200 transition-colors p-1"
                   >
                     <X size={15} />
                   </button>
@@ -1111,21 +1123,23 @@ export default function HomePage() {
               )}
 
               {manageMode && (
-                <div className="collection-management-bar">
-                  <div className="collection-management-description">
-                    <CheckCheck size={18} />
-                    <span>
+                <div className="collection-management-bar bg-zinc-900/90 backdrop-blur-md border border-zinc-800 rounded-2xl p-4 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
+                  <div className="collection-management-description flex items-center gap-3 text-xs text-zinc-300">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                      <CheckCheck size={18} />
+                    </div>
+                    <span className="font-semibold text-white">
                       Manage selected collection designs
                     </span>
                   </div>
 
-                  <div className="collection-selection-actions">
-                    <span className="collection-selection-count">
+                  <div className="collection-selection-actions flex items-center gap-4">
+                    <span className="collection-selection-count text-xs text-zinc-400 font-medium">
                       {selectedIds.length} of {designs.length} selected
                     </span>
                     <button
                       type="button"
-                      className="collection-text-action"
+                      className="collection-text-action text-xs font-semibold text-amber-400 hover:text-amber-300 transition-colors"
                       onClick={toggleSelectAll}
                     >
                       {allSelected ? "Deselect All" : "Select All"}
@@ -1133,7 +1147,7 @@ export default function HomePage() {
                     {selectedIds.length > 0 && !allSelected && (
                       <button
                         type="button"
-                        className="collection-text-action"
+                        className="collection-text-action text-xs font-semibold text-zinc-400 hover:text-zinc-200 transition-colors"
                         onClick={() => setSelectedIds([])}
                       >
                         Clear
@@ -1144,11 +1158,12 @@ export default function HomePage() {
               )}
 
               {error && (
-                <div className="custom-error" role="alert">
-                  <p>{error}</p>
+                <div className="custom-error bg-red-500/10 border border-red-500/20 text-red-300 p-6 rounded-2xl mb-8 flex flex-col sm:flex-row items-center justify-between gap-4" role="alert">
+                  <p className="text-sm font-medium">{error}</p>
                   <button
                     type="button"
                     onClick={refreshGallery}
+                    className="bg-red-500 hover:bg-red-400 text-zinc-950 font-semibold px-4 py-2 rounded-xl text-xs transition-colors shrink-0"
                   >
                     Retry
                   </button>
@@ -1156,11 +1171,12 @@ export default function HomePage() {
               )}
 
               {loading ? (
-                <div className="loading">
-                  Loading collection...
+                <div className="loading flex flex-col items-center justify-center py-24 text-zinc-400 gap-4">
+                  <LoaderCircle size={32} className="animate-spin text-amber-400" />
+                  <span className="text-sm font-medium tracking-wide">Loading collection...</span>
                 </div>
               ) : !selectedCategory ? (
-                <div className="empty-state">
+                <div className="empty-state text-center py-24 border border-dashed border-zinc-800 rounded-2xl text-zinc-500 text-sm">
                   No categories available.
                 </div>
               ) : (
@@ -1181,73 +1197,73 @@ export default function HomePage() {
 
       {manageMode && managementView === "collection" && (
         <div
-          className="collection-floating-toolbar"
+          className="collection-floating-toolbar fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-zinc-900/95 backdrop-blur-xl border border-zinc-800/80 shadow-2xl rounded-2xl px-6 py-3.5 flex items-center gap-6 text-xs text-zinc-200 transition-all animate-slideUp"
           role="toolbar"
           aria-label="Collection management"
         >
-          <div className="collection-toolbar-count">
-            <strong>{selectedIds.length} selected</strong>
-            <span>Manage designs</span>
+          <div className="collection-toolbar-count flex flex-col">
+            <strong className="text-white font-bold">{selectedIds.length} selected</strong>
+            <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Manage designs</span>
           </div>
 
-          <div className="collection-toolbar-divider" />
+          <div className="collection-toolbar-divider w-px h-8 bg-zinc-800" />
 
-          <div className="collection-toolbar-actions">
+          <div className="collection-toolbar-actions flex items-center gap-2">
             <button
               type="button"
-              className="collection-toolbar-action"
+              className="collection-toolbar-action flex items-center gap-1.5 bg-zinc-800/60 hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-200 px-3.5 py-2 rounded-xl font-medium transition-all"
               disabled={selectedIds.length !== 1}
               onClick={openEditDialog}
               title="Select one dress to edit"
             >
-              <Pencil size={16} />
+              <Pencil size={15} className="text-amber-400" />
               Edit
             </button>
 
             <button
               type="button"
-              className="collection-toolbar-action"
+              className="collection-toolbar-action flex items-center gap-1.5 bg-zinc-800/60 hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-200 px-3.5 py-2 rounded-xl font-medium transition-all"
               disabled={!selectedIds.length}
               onClick={() => openCollectionAction("move")}
             >
-              <FolderInput size={16} />
+              <FolderInput size={15} className="text-amber-400" />
               Move
             </button>
 
             <button
               type="button"
-              className="collection-toolbar-action"
+              className="collection-toolbar-action flex items-center gap-1.5 bg-zinc-800/60 hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-200 px-3.5 py-2 rounded-xl font-medium transition-all"
               disabled={!selectedIds.length}
               onClick={() => openCollectionAction("hide")}
             >
-              <EyeOff size={16} />
+              <EyeOff size={15} className="text-amber-400" />
               Hide
             </button>
 
             <button
               type="button"
-              className="collection-toolbar-action danger"
+              className="collection-toolbar-action danger flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 disabled:opacity-40 disabled:cursor-not-allowed px-3.5 py-2 rounded-xl font-medium transition-all border border-red-500/20"
               disabled={!selectedIds.length}
               onClick={openTrashDialog}
             >
-              <Trash2 size={16} />
+              <Trash2 size={15} />
               Move to Trash
             </button>
 
             <button
               type="button"
-              className="collection-toolbar-action danger"
+              className="collection-toolbar-action danger flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white disabled:opacity-40 disabled:cursor-not-allowed px-3.5 py-2 rounded-xl font-medium transition-all shadow-sm"
               disabled={!selectedIds.length}
               onClick={openPermanentDeleteDialog}
             >
-              <Trash2 size={16} />
+              <Trash2 size={15} />
               Delete Permanently
             </button>
           </div>
 
           <button
             type="button"
-            className="collection-toolbar-close"
+            className="collection-toolbar-close text-zinc-400 hover:text-white transition-colors bg-zinc-800/50 hover:bg-zinc-800 p-2 rounded-xl ml-2"
             onClick={leaveManageMode}
             aria-label="Exit management mode"
           >

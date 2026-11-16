@@ -479,40 +479,70 @@ beauty filters.
 
 =========================================================
 
-STRICT FOOTWEAR CONSISTENCY
+INTELLIGENT FOOTWEAR MATCHING V2
 =========================================================
 
-All four generated views must show the same pair of shoes.
+Footwear is part of the complete virtual try-on outfit.
 
-Use IMAGE 3, the original customer front photograph,
-as the common footwear reference.
+CASE 1: FOOTWEAR EXISTS IN IMAGE 1
 
-If IMAGE 1 explicitly provides footwear as part of the
-selected outfit, use that footwear consistently.
+If the selected garment reference visibly includes footwear,
+reproduce that exact footwear on the customer.
 
-Otherwise, preserve the footwear shown in IMAGE 3.
+Preserve its:
+- Color and color combinations.
+- Design and footwear category.
+- Material and texture.
+- Shape and proportions.
+- Sole design and color.
+- Laces, buckles and decorations.
 
-Preserve exactly the same:
-- Shoe color.
-- Shoe design.
-- Shoe material.
-- Shoe shape.
-- Sole color.
-- Laces and decorative details.
-- Footwear style.
+Do not substitute another shoe design.
 
-Never independently select footwear for each camera view.
+CASE 2: FOOTWEAR IS NOT PRESENT IN IMAGE 1
 
-If the front view has brown shoes, every other view
-must also have the same brown shoes.
+Automatically select appropriate footwear based on the
+selected garment category, color, trousers and overall style.
 
-If the front view has black shoes, every other view
-must also have the same black shoes.
+For example:
 
-Do not randomly switch between brown, black, white,
-or any other footwear color.
+- Formal suits: matching Oxford or Derby leather shoes.
+- Formal shirts and trousers: formal leather shoes.
+- Blazers and chinos: complementary loafers.
+- Casual shirts and jeans: matching sneakers or loafers.
+- T-shirts and casual trousers: appropriate sneakers.
+- Sherwani: matching traditional mojari or jutti.
+- Kurta and pyjama: suitable traditional footwear.
 
-Do not invent footwear when the reference is unclear.
+Choose a complementary color based on the complete outfit.
+
+Do not leave the customer barefoot.
+Do not preserve unsuitable original customer footwear.
+
+CASE 3: CROSS-VIEW CONSISTENCY
+
+If IMAGE 4 is provided, use it as the definitive footwear
+reference for the current generation job.
+
+Reproduce exactly the same footwear shown in IMAGE 4
+from the requested camera direction.
+
+Never independently redesign footwear for each view.
+
+Maintain identical footwear across FRONT, LEFT, RIGHT,
+and BACK views.
+
+IMAGE 4 is strictly a footwear styling reference.
+Never copy its facial features, body pose or camera angle.
+
+IMAGE 2 remains the primary customer identity and pose
+reference. IMAGE 3 confirms customer identity.
+
+Footwear must fit naturally around the customer's feet.
+Preserve the original leg proportions and body structure.
+
+Do not crop the feet or shoes.
+Do not create distorted or mismatched footwear.
 
 =========================================================
 STRICT SIDE-VIEW IDENTITY PRESERVATION
@@ -610,6 +640,7 @@ def call_gemini_with_retry(
     view: str,
     job_id=None,
     identity_image: Image.Image = None,
+    footwear_reference: Image.Image = None,
 ):
     last_error = None
 
@@ -644,7 +675,14 @@ def call_gemini_with_retry(
                     identity_image
                     if identity_image is not None
                     else person_image,
-                ],
+                ] + (
+                    [
+                        "IMAGE 4 - Generated front footwear reference only:",
+                        footwear_reference,
+                    ]
+                    if footwear_reference is not None
+                    else []
+                ),
                 config=types.GenerateContentConfig(
                     response_modalities=["IMAGE"],
                 ),
@@ -1160,6 +1198,24 @@ def generate_single_image(
         f"[IDENTITY] Customer identity reference ready for {view} view."
     )
 
+    footwear_reference = None
+
+    if view != "front":
+        _, front_path, _ = generated_output_details(
+            job_id,
+            "front",
+        )
+
+        if not is_existing_image_usable(front_path):
+            raise RuntimeError(
+                "Front view must be generated before other views."
+            )
+
+        footwear_reference = prepare_input_image(
+            front_path,
+            force_portrait=True,
+        )
+
     prompt = build_tryon_prompt(view)
 
 
@@ -1172,6 +1228,7 @@ def generate_single_image(
         design_image=design_image,
         person_image=person_image,
         identity_image=identity_image,
+        footwear_reference=footwear_reference,
         view=view,
                    job_id=usage_job_id,
                )

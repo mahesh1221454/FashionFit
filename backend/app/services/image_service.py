@@ -274,214 +274,543 @@ def build_tryon_prompt(view: str) -> str:
 
     view = view.strip().lower()
 
-    view_guidance = {
-        "front": """
-- PRIMARY REFERENCE: IMAGE 2.
-- Preserve the customer's exact frontal facial appearance.
-- Match the original facial expression, gaze and head position.
-- Preserve the original front-facing posture.
-- Do not rotate the customer toward either side.
-""",
-        "left": """
-- PRIMARY REFERENCE: IMAGE 3.
-- Reproduce the exact LEFT profile shown in IMAGE 3.
-- Match the original direction of the nose, face, shoulders,
-  torso, arms and feet.
-- Never substitute IMAGE 4 for the target pose.
-- The output must match the orientation of IMAGE 3.
-- Do not mirror or horizontally flip the customer.
-- Do not turn the customer's face toward the camera.
-""",
-        "right": """
-- PRIMARY REFERENCE: IMAGE 4.
-- Reproduce the exact RIGHT profile shown in IMAGE 4.
-- Match the original direction of the nose, face, shoulders,
-  torso, arms and feet.
-- The viewing direction must be opposite to the LEFT profile.
-- Never repeat the pose or viewing direction from IMAGE 3.
-- The output must match the orientation of IMAGE 4.
-- Do not mirror or horizontally flip the customer.
-- Do not turn the customer's face toward the camera.
-""",
-        "back": """
-- PRIMARY REFERENCE: IMAGE 5.
-- Reproduce the customer's original BACK view.
-- Preserve the back-of-head shape, hairstyle, rear hairline,
-  neck, shoulder width and back curvature.
-- Preserve the original rear body posture and proportions.
-- Do not rotate the head or body toward the camera.
-- Do not introduce facial features that are not visible
-  in IMAGE 5.
-"""
-    }
+    common_prompt = """
 
-    if view not in view_guidance:
-        raise ValueError(f"Unsupported view: {view}")
+ROLE:
+You are a professional virtual clothing try-on image editing
+system. Your task is to dress the actual customer in the
+selected garment while maintaining their original identity,
+physical appearance, body proportions and photographic realism.
 
-    return f"""
-Task: Multi-angle virtual fashion try-on and professional
-cinematic studio photography generation.
+PRIMARY OBJECTIVE:
+Generate a realistic photograph of the ORIGINAL CUSTOMER
+wearing the selected outfit.
 
-INPUT STRUCTURE MAPPING:
+This is a clothing replacement task, not a person generation
+task, not a face replacement task, and not a fashion model
+creation task.
 
-- IMAGE 1: Selected garment reference.
-- IMAGE 2: Actual customer FRONT photograph.
-- IMAGE 3: Actual customer LEFT photograph.
-- IMAGE 4: Actual customer RIGHT photograph.
-- IMAGE 5: Actual customer BACK photograph.
+INPUT IMAGE UNDERSTANDING:
 
-CORE OBJECTIVE:
+CUSTOMER IMAGE:
+The customer image is the primary reference for identity,
+face, body, skin tone, hairstyle, pose and camera direction.
 
-Generate a high-end cinematic studio photograph of the
-actual customer wearing the exact garment from IMAGE 1.
+GARMENT REFERENCE IMAGE:
+The garment image is strictly a clothing design reference.
 
-CURRENT OUTPUT VIEW: {view.upper()}
+If the garment is displayed on a mannequin or another person,
+extract only the clothing information from that reference.
 
---- 1. STRICT VIEW AND ORIENTATION LOCK ---
+Never use the garment reference person's face, head, hairstyle,
+skin, body shape or personal identity.
 
-{view_guidance[view]}
+ADDITIONAL CUSTOMER REFERENCE:
+If another customer photograph is provided, use it only to
+reinforce the original customer's identity. Do not copy its
+camera angle into the requested output.
 
-- The designated primary reference determines the exact
-  customer pose, camera angle and viewing direction.
-- All other customer photographs are supporting identity
-  references only.
-- Supporting references must NEVER override the primary
-  reference's viewing angle, posture or facial profile.
-- Do not combine multiple poses from different photographs.
-- Do not generate a three-quarter view instead of the
-  requested view.
-- Preserve the original camera orientation.
-- Keep the customer upright, with the head at the top
-  and feet at the bottom.
+PRIORITY ORDER:
 
---- 2. STRICT CUSTOMER IDENTITY PRESERVATION ---
+1. Original customer identity.
+2. Requested customer viewing angle.
+3. Original customer body proportions.
+4. Exact selected garment design.
+5. Outfit consistency.
+6. Footwear consistency.
+7. Photorealistic rendering.
 
-- IMAGE 1 may contain a professional fashion model.
-  Completely ignore the model's physical appearance.
-- Treat the primary customer reference as the original
-  photograph being edited.
-- Replace the clothing and background while retaining
-  the customer's original physical identity.
-- Preserve the customer's actual visible facial features:
 
-  * Facial structure and geometry
-  * Eyes and eyebrows
-  * Nose shape and projection
-  * Lips and mouth
-  * Cheeks
-  * Chin and jawline
-  * Ears
-  * Beard and moustache
-  * Hairline and hairstyle
-  * Skin tone and texture
-  * Facial expression
-  * Natural age appearance
+SECTION 1: STRICT CUSTOMER IDENTITY PRESERVATION
 
-- Do not reconstruct, beautify, smooth, reshape,
-  replace or reinterpret the customer's face.
-- Do not blend the customer's face with the garment
-  reference model.
-- Facial identity takes priority over studio lighting
-  and photographic enhancements.
+The generated person must remain the original customer.
 
---- 3. EXACT BODY STRUCTURE PRESERVATION ---
+Preserve the customer's:
 
-- Preserve the customer's original:
+- Facial geometry.
+- Face shape.
+- Eye shape, size and spacing.
+- Eyebrows.
+- Nose shape and nose bridge.
+- Lips and mouth structure.
+- Cheeks and cheekbones.
+- Jawline and chin.
+- Forehead.
+- Ears.
+- Natural skin tone.
+- Skin texture.
+- Facial hair.
+- Beard and moustache.
+- Hairstyle.
+- Hairline.
+- Age appearance.
+- Natural facial asymmetry.
+- Recognizable personal features.
 
-  * Height appearance
-  * Weight appearance
-  * Body shape
-  * Shoulder width
-  * Chest structure
-  * Waist proportions
-  * Arm length
-  * Leg length
-  * Neck structure
-  * Natural posture
+Treat the original customer head and face as protected regions.
 
-- Do not make the customer slimmer, taller, shorter,
-  broader or more muscular.
-- Adapt the garment to the customer's body.
-- Never adapt the customer's body to the garment.
+Do not unnecessarily regenerate, reinterpret, beautify,
+enhance, reshape or replace the customer's face.
 
---- 4. GARMENT EXTRACTION AND 360-DEGREE CONSISTENCY ---
+Retain the original face and head pixels wherever feasible.
 
-- Extract the exact selected garment from IMAGE 1.
-- Preserve the original:
+Do not change the customer's gender, ethnicity, age,
+complexion or facial appearance.
 
-  * Garment type and silhouette
-  * Fabric material and texture
-  * Colors and color combinations
-  * Embroidery patterns and density
-  * Motif sizes and spacing
-  * Neckline and collar
-  * Sleeves and cuffs
-  * Buttons and stitching
-  * Garment length
-  * Decorative borders
-  * Outfit-related accessories
+Do not generate a generic attractive fashion model.
 
-- Maintain consistent garment construction across
-  FRONT, LEFT, RIGHT and BACK viewing angles.
-- Do not simplify, remove, enlarge or redesign embroidery.
-- Do not change heavily embroidered fabric into plain
-  fabric in another viewing angle.
-- Preserve the original stole, dupatta, shawl or other
-  accessory placement when present.
-- Maintain consistent accessory colors, borders,
-  shoulder placement and draping direction.
-- For garment areas not visible in IMAGE 1, continue
-  the existing fabric and design logically without
-  introducing unrelated decorative elements.
-- Fit the garment naturally onto the customer's
-  original body and posture.
+Do not combine the customer's face with another person's face.
 
---- 5. CINEMATIC STUDIO ENVIRONMENT ---
+Do not use any facial information from the garment reference.
 
-- Completely replace the original customer background.
-- Place the customer inside a professional high-end
-  photography studio.
-- Use a softly textured matte light-grey cyclorama wall.
-- Use smooth neutral light-grey studio flooring.
-- Maintain realistic spatial depth and perspective.
-- Apply soft cinematic key lighting and subtle rim lighting.
-- Include realistic contact shadows underneath the feet.
-- Maintain consistent studio color, lighting style and
-  photographic appearance across all four views.
-- Studio lighting must not modify the customer's natural
-  complexion or facial structure.
+The result must look like the actual customer wearing
+new clothes, rather than another person wearing those clothes.
 
---- 6. PHOTOGRAPHIC QUALITY ---
 
-- Professional full-frame DSLR photography.
-- 85mm fashion portrait lens appearance.
-- Sharp facial details.
-- Accurate fabric textures and embroidery.
+SECTION 2: MANNEQUIN AND MODEL EXCLUSION
+
+The mannequin or model in the garment reference exists
+only to display the selected clothing.
+
+Ignore the mannequin's:
+
+- Face.
+- Head.
+- Eyes.
+- Nose.
+- Ears.
+- Lips.
+- Hair.
+- Skin.
+- Neck.
+- Hands.
+- Body shape.
+- Body proportions.
+- Pose.
+
+Never reproduce a mannequin face.
+
+Never generate plastic-looking skin.
+
+Never transfer the mannequin's identity to the customer.
+
+The original customer is the sole authoritative source
+for all visible human identity and anatomical characteristics.
+
+
+SECTION 3: BODY PRESERVATION
+
+Maintain the customer's original:
+
+- Height appearance.
+- Body shape.
+- Shoulder width.
+- Chest proportions.
+- Waist proportions.
+- Hip proportions.
+- Arm length.
+- Leg length.
+- Neck length.
+- Overall body structure.
+
+Fit the selected clothes naturally onto the customer's
+existing body.
+
+Do not reshape the customer to match the mannequin.
+
+Do not make the customer taller, shorter, slimmer,
+heavier or more muscular.
+
+Preserve natural human anatomy and realistic proportions.
+
+
+SECTION 4: EXACT GARMENT REPRODUCTION
+
+Carefully examine the selected garment reference.
+
+Reproduce the same outfit, preserving:
+
+- Original garment category.
+- Original color.
+- Fabric.
+- Material appearance.
+- Texture.
+- Patterns.
+- Prints.
+- Embroidery.
+- Decorative elements.
+- Buttons.
+- Seams.
+- Collar.
+- Neckline.
+- Sleeve length.
+- Cuffs.
+- Garment length.
+- Hemline.
+- Pants or trousers, if included.
+- Included garment accessories.
+- Layering.
+- Overall design and silhouette.
+
+Do not redesign or simplify the selected garment.
+
+Do not introduce unrelated patterns or additional clothing.
+
+Do not change the color of any garment component.
+
+Do not shorten or extend the garment.
+
+If lower-body clothing is visible in the reference,
+reproduce its original design and color.
+
+If lower-body clothing is not included, retain compatible
+customer clothing or select suitable complementary clothing
+for the front image.
+
+Maintain the same clothing arrangement across all views.
+
+For garment regions not visible in the reference, infer
+only reasonable construction details consistent with the
+visible design. Do not introduce unrelated decorations.
+
+
+SECTION 5: FOOTWEAR SELECTION AND CONSISTENCY
+
+Inspect the complete selected garment reference for footwear.
+
+CASE A: FOOTWEAR IS PRESENT
+
+If shoes, sandals, heels, traditional footwear or any other
+footwear are visible in the selected garment reference:
+
+Use the exact same footwear.
+
+Preserve its:
+
+- Color.
+- Design.
+- Style.
+- Shape.
+- Material.
+- Texture.
+- Pattern.
+- Sole appearance.
+
+Do not substitute different footwear.
+
+CASE B: FOOTWEAR IS NOT PRESENT
+
+If the selected garment reference does not include footwear:
+
+Automatically select appropriate footwear that complements
+the garment's design, color, category and occasion.
+
+Examples:
+
+- Traditional ethnic outfits: suitable traditional footwear.
+- Sherwani: matching ethnic shoes or mojari.
+- Formal suits: suitable formal dress shoes.
+- Casual outfits: suitable casual footwear.
+- Sarees: appropriate sandals or ethnic footwear.
+- Lehengas: complementary ethnic footwear.
+- Western dresses: suitable footwear matching the outfit.
+- Sportswear: suitable athletic footwear.
+
+Select footwear based on the complete outfit, not on
+random styling preferences.
+
+Footwear must have natural proportions and realistic
+ground contact.
+
+FOOTWEAR CONSISTENCY:
+
+The footwear selected during front-view generation must
+remain unchanged in subsequent views when a generated
+front-outfit reference is provided.
+
+Do not independently redesign or recolor footwear for
+the left, right or back view.
+
+Show the same footwear from the requested camera angle.
+
+
+SECTION 6: FOUR-VIEW OUTFIT CONSISTENCY
+
+All images belong to the same virtual try-on session.
+
+The customer must appear to be wearing the same physical
+outfit photographed from different viewpoints.
+
+Maintain identical:
+
+- Customer identity.
+- Garment color.
+- Fabric appearance.
+- Embroidery.
+- Garment length.
+- Sleeve length.
+- Trousers design and color.
+- Footwear style and color.
+- Clothing layers.
+- Included accessories.
+
+If a generated front-outfit reference is supplied,
+use it only as a clothing and footwear consistency reference.
+
+Never use it to override the actual customer image's
+identity, head orientation or body pose.
+
+The selected original garment reference remains the
+authoritative source for visible garment design details.
+
+Do not introduce a different outfit in another view.
+
+
+SECTION 7: PHOTOGRAPHIC REALISM
+
+Generate a natural, realistic fashion photograph.
+
+Maintain:
+
 - Natural skin texture.
 - Realistic fabric folds.
-- Full-body portrait composition when supported by
-  the uploaded photograph.
-- No artificial facial smoothing.
-- No distorted anatomy.
-- No duplicated limbs.
-- No text.
-- No watermarks.
+- Correct clothing draping.
+- Realistic shadows.
+- Natural lighting.
+- Accurate perspective.
+- Anatomically correct hands and feet.
+- Realistic clothing fitting.
+- Natural connection between the head, neck and body.
 
---- 7. FINAL OUTPUT REQUIREMENTS ---
+Preserve the customer's original pose and body direction.
 
-Before producing the final image, ensure that:
+Keep the person fully visible from head to footwear
+whenever the input image and framing allow.
 
-- The customer matches the designated primary reference.
-- The viewing direction matches the requested view.
-- LEFT and RIGHT profiles are not duplicates.
-- The original customer facial appearance is preserved.
-- The original body structure is preserved.
-- The garment remains faithful to IMAGE 1.
-- The studio environment remains professional and realistic.
+Do not crop out the head or feet unnecessarily.
 
-Return only ONE high-resolution generated photograph
-of the customer in the requested {view.upper()} VIEW.
+Avoid artificial or excessively stylized appearance.
+
+
+SECTION 8: STRICTLY PROHIBITED OUTPUTS
+
+Do not generate:
+
+- A mannequin face.
+- A different person.
+- A generic AI fashion model.
+- A modified customer face.
+- Plastic skin.
+- An altered hairstyle.
+- Different facial hair.
+- Incorrect camera direction.
+- Mirrored left or right views.
+- Changed garment colors.
+- Different trousers across views.
+- Different footwear across views.
+- Incorrect garment lengths.
+- Unnatural body proportions.
+- Extra fingers or limbs.
+- Watermarks.
+- Text.
+- Logos not present in the garment.
+- Collages.
+- Multiple people.
+
+
+SECTION 9: OUTPUT REQUIREMENT
+
+Return exactly ONE realistic virtual try-on image
+for the requested view.
+
+The final image must show the original customer
+wearing the selected outfit.
+
+Prioritize customer identity preservation over
+beautification or creative modification.
+
 """
+
+    view_prompts = {
+
+        "front": """
+
+REQUESTED VIEW: FRONT VIEW
+
+Use the original front-facing customer photograph
+as the primary image for editing.
+
+Preserve the customer's original front-facing identity,
+facial features, expression, hairstyle and head position.
+
+Both eyes should remain visible if they are visible
+in the original customer photograph.
+
+Preserve the original shoulder orientation, body posture
+and camera perspective.
+
+Replace only the customer's existing clothing with
+the selected outfit and apply the footwear rule.
+
+The customer must face the same direction as in the
+original front photograph.
+
+Do not rotate the customer into a side view.
+
+Establish the garment appearance, lower-body clothing,
+accessories and footwear for this try-on session.
+
+Return exactly one front-view photograph.
+
+""",
+
+        "left": """
+
+REQUESTED VIEW: LEFT SIDE VIEW
+
+Use the original LEFT customer photograph as the
+primary image for editing.
+
+The customer in the left reference photograph is
+the only authoritative source for side-profile identity.
+
+Preserve the original:
+
+- Left-profile facial geometry.
+- Visible eye.
+- Nose profile.
+- Forehead profile.
+- Jawline.
+- Chin.
+- Ear.
+- Beard and moustache.
+- Side hairstyle.
+- Neck and head proportions.
+
+Follow the exact viewing direction and body orientation
+of the original left customer photograph.
+
+Do not horizontally flip or mirror the photograph.
+
+Do not copy the right-side profile.
+
+Do not convert the side profile into a front-facing view.
+
+Do not replace the original customer's side-profile face
+with the mannequin's side-profile face.
+
+Apply the selected garment naturally to the customer's
+left-side body orientation.
+
+If a front-outfit consistency reference is available,
+reproduce the same garment and footwear from this angle.
+
+Return exactly one left-side photograph.
+
+""",
+
+        "right": """
+
+REQUESTED VIEW: RIGHT SIDE VIEW
+
+Use the original RIGHT customer photograph as the
+primary image for editing.
+
+The customer in the right reference photograph is
+the only authoritative source for side-profile identity.
+
+Preserve the original:
+
+- Right-profile facial geometry.
+- Visible eye.
+- Nose profile.
+- Forehead profile.
+- Jawline.
+- Chin.
+- Ear.
+- Beard and moustache.
+- Side hairstyle.
+- Neck and head proportions.
+
+Follow the exact viewing direction and body orientation
+of the original right customer photograph.
+
+Do not horizontally flip or mirror the photograph.
+
+Do not copy the left-side profile.
+
+Do not convert the side profile into a front-facing view.
+
+Do not generate the garment reference model's face.
+
+Apply the selected garment naturally to the customer's
+right-side body orientation.
+
+Maintain the same garment length, trousers and footwear
+established in the front-outfit reference, if supplied.
+
+Return exactly one right-side photograph.
+
+""",
+
+        "back": """
+
+REQUESTED VIEW: BACK VIEW
+
+Use the original BACK customer photograph as the
+primary image for editing.
+
+Preserve the original:
+
+- Back of the head.
+- Hair texture.
+- Rear hairstyle.
+- Hairline.
+- Neck.
+- Shoulder width.
+- Back posture.
+- Body shape.
+- Arm position.
+- Leg position.
+
+Follow the exact rear-facing direction of the
+original back customer photograph.
+
+Do not turn the customer's head toward the camera.
+
+Do not create facial features where the original
+back-facing image does not show them.
+
+Reproduce the selected garment from behind.
+
+Maintain the original garment color, fabric, sleeve
+length, hemline and overall construction.
+
+Where rear garment details are not visible in the
+selected garment reference, infer realistic details
+consistent with the original garment.
+
+Do not invent unrelated embroidery or decorations.
+
+Maintain the same trousers, accessories and footwear
+as the front-outfit reference, if supplied.
+
+Return exactly one back-view photograph.
+
+"""
+
+    }
+
+    if view not in view_prompts:
+        raise ValueError(f"Unsupported try-on view: {view}")
+
+    return (
+        common_prompt.strip()
+        + "\n\n"
+        + view_prompts[view].strip()
+    )
+
+
 
 
 # =========================================================
@@ -491,6 +820,62 @@ of the customer in the requested {view.upper()} VIEW.
 # =========================================================
 # GEMINI CALL WITH RETRIES + DATABASE USAGE TRACKING
 # =========================================================
+
+
+def build_v4_reference_contents(
+    prompt,
+    view,
+    person_image,
+    design_image,
+    outfit_reference=None,
+):
+    """
+    V4_IMAGE_REFERENCE_MAPPING
+
+    Each reference has an explicit role.
+    Customer identity always takes priority.
+    """
+
+    contents = [
+        "IMAGE 1: PRIMARY CUSTOMER PHOTOGRAPH. "
+        "Edit this exact person. Preserve the face, head, "
+        "hair, skin tone, body shape, pose and viewing "
+        "direction. Replace clothing only.",
+
+        person_image,
+
+        "IMAGE 2: SELECTED GARMENT REFERENCE. "
+        "Use this image exclusively for garment design, "
+        "fabric, color, embroidery, length, accessories "
+        "and included footwear. Ignore the mannequin or "
+        "model's face, head, hair, skin and body.",
+
+        design_image,
+    ]
+
+    if view != "front" and outfit_reference is not None:
+
+        contents.extend([
+            "IMAGE 3: GENERATED FRONT OUTFIT REFERENCE. "
+            "Use only the clothing and footwear shown here. "
+            "Maintain the same garment length, colors, "
+            "trousers, accessories and footwear. "
+            "Ignore the head, face and body orientation. "
+            "Do not copy the front-facing pose.",
+
+            outfit_reference,
+        ])
+
+    contents.extend([
+        "FINAL INSTRUCTIONS: Apply the following rules "
+        "to IMAGE 1. Identity and viewing direction must "
+        "come from IMAGE 1 only.",
+
+        prompt,
+    ])
+
+    return contents
+
 
 def call_gemini_with_retry(
     prompt: str,
@@ -521,14 +906,15 @@ def call_gemini_with_retry(
         try:
             response = client.models.generate_content(
                 model=GEMINI_MODEL,
-                contents=[
-                    design_image,
-                    customer_images["front"],
-                    customer_images["left"],
-                    customer_images["right"],
-                    customer_images["back"],
-                    prompt,
-                ],
+                contents=(
+                    build_v4_reference_contents(
+                    prompt=prompt,
+                    view=view,
+                    person_image=person_image,
+                    design_image=design_image,
+                    outfit_reference=footwear_reference,
+                )
+                ),
                 config=types.GenerateContentConfig(
                     temperature=0.3, response_modalities=["IMAGE"],
                 ),
@@ -1075,13 +1461,55 @@ def generate_single_image(
         f"for {view.upper()} generation."
     )
 
+
+    # =====================================================
+    # V4 FRONT OUTFIT CONSISTENCY REFERENCE
+    # =====================================================
+
+    front_outfit_reference = None
+
+    if view != "front":
+
+        _, front_output_path, _ = generated_output_details(
+            job_id,
+            "front",
+        )
+
+        if not is_existing_image_usable(
+            front_output_path
+        ):
+            raise RuntimeError(
+                "A valid generated front image is required "
+                "before generating other views."
+            )
+
+        front_outfit_reference = prepare_input_image(
+            front_output_path,
+            force_portrait=True,
+        )
+
+        print(
+            f"[V4] {view.upper()}: "
+            "Loaded generated front outfit reference."
+        )
+
+    else:
+
+        print(
+            "[V4] FRONT: Establishing outfit "
+            "and footwear appearance."
+        )
+
     response = call_gemini_with_retry(
-        customer_images=customer_images, prompt=prompt,
+        customer_images=customer_images,
+        prompt=prompt,
         design_image=design_image,
         person_image=person_image,
         view=view,
-                   job_id=usage_job_id,
-               )
+        job_id=usage_job_id,
+        identity_image=person_image,
+        footwear_reference=front_outfit_reference,
+    )
 
 
     # =====================================================

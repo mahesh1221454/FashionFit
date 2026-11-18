@@ -1,4 +1,4 @@
-﻿import {
+import {
   useEffect,
   useState,
 } from "react";
@@ -24,8 +24,16 @@ export default function ResultsPage() {
     jobId,
   } = useParams();
 
-  const navigate =
-    useNavigate();
+
+  const navigate = useNavigate();
+
+  // FF_DIRECT_RESULTS_V1
+
+  const [generationError, setGenerationError] =
+    useState("");
+
+  const [connectionError, setConnectionError] =
+    useState("");
 
 
   const [
@@ -67,75 +75,252 @@ export default function ResultsPage() {
 
 
   useEffect(() => {
+    let active = true;
+    let timer = null;
 
-    const load =
-      async () => {
+    setJob(null);
+    setPreviewIndex(null);
+    setGenerationError("");
+    setConnectionError("");
 
-        try {
+    if (!jobId) {
+      setGenerationError("Generation job ID is missing.");
+      return;
+    }
 
-          const data =
-            await getGeneration(
-              jobId
-            );
+    const load = async () => {
+      try {
+        const data = await getGeneration(jobId);
 
+        if (!active) return;
 
-          setJob(
-            data
+        setJob(data);
+        setConnectionError("");
+
+        if (data.status === "failed") {
+          setGenerationError(
+            data.error_message ||
+            "Image generation failed."
           );
-
-        } catch (error) {
-
-          console.error(
-            "Failed to load generation:",
-            error
-          );
-
+          return;
         }
 
-      };
+        if (data.status === "completed") {
+          const allReady = [
+            "front",
+            "left",
+            "right",
+            "back",
+          ].every(
+            view => Boolean(data[`output_${view}_url`])
+          );
 
+          if (!allReady) {
+            setGenerationError(
+              "Some generated images are unavailable."
+            );
+          }
+
+          return;
+        }
+
+      } catch (error) {
+        if (!active) return;
+
+        console.error(
+          "Generation polling error:",
+          error
+        );
+
+        if ([401, 403, 404, 410].includes(
+          error?.response?.status
+        )) {
+          setConnectionError("");
+          setGenerationError(
+            "This generation session is no longer accessible."
+          );
+          return;
+        }
+
+        setConnectionError(
+          "Connection interrupted. Reconnecting..."
+        );
+      }
+
+      if (active) {
+        timer = setTimeout(load, 2000);
+      }
+    };
 
     load();
 
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [jobId]);
 
 
-  const previewImages =
-    job
-      ? [
-          {
-            title:
-              "Front View",
 
-            image:
-              job.output_front_url,
-          },
 
-          {
-            title:
-              "Left View",
 
-            image:
-              job.output_left_url,
-          },
+  // Compact results opening position
 
-          {
-            title:
-              "Right View",
+  useEffect(() => {
 
-            image:
-              job.output_right_url,
-          },
+    let secondFrame;
 
-          {
-            title:
-              "Back View",
+    const firstFrame = requestAnimationFrame(() => {
 
-            image:
-              job.output_back_url,
-          },
-        ]
-      : [];
+      secondFrame = requestAnimationFrame(() => {
+
+        const section = document.getElementById(
+          "ff-results-start"
+        );
+
+        section?.scrollIntoView({
+          behavior: "instant",
+          block: "start",
+        });
+
+      });
+
+    });
+
+    return () => {
+      cancelAnimationFrame(firstFrame);
+
+      if (secondFrame !== undefined) {
+        cancelAnimationFrame(secondFrame);
+      }
+    };
+
+  }, [jobId]);
+
+  const previewImages = [
+    {
+      title: "Front View",
+      image: job?.output_front_url,
+    },
+    {
+      title: "Left View",
+      image: job?.output_left_url,
+    },
+    {
+      title: "Right View",
+      image: job?.output_right_url,
+    },
+    {
+      title: "Back View",
+      image: job?.output_back_url,
+    },
+  ];
+
+  const readyCount = previewImages.filter(
+    item => Boolean(item.image)
+  ).length;
+
+  const generationComplete =
+    job?.status === "completed" &&
+    readyCount === 4 &&
+    !generationError;
+
+  const generationFailed =
+    Boolean(generationError) ||
+    job?.status === "failed";
+
+  const progress = generationComplete
+    ? 100
+    : Math.min(
+        100,
+        Math.max(0, Number(job?.progress) || 0)
+      );
+
+
+
+  // FF_COMPACT_RESULTS_V2
+
+  const activeImageIndex = previewImages.findIndex(
+    item => !item.image
+  );
+
+  const [imageLoadingState, setImageLoadingState] =
+    useState({
+      jobId: null,
+      index: -1,
+      elapsed: 0,
+    });
+
+  useEffect(() => {
+
+    if (
+      generationFailed ||
+      generationComplete ||
+      activeImageIndex < 0
+    ) {
+      return;
+    }
+
+    const startedAt = Date.now();
+
+    const updateProgress = () => {
+      setImageLoadingState({
+        jobId,
+        index: activeImageIndex,
+        elapsed: (Date.now() - startedAt) / 1000,
+      });
+    };
+
+    updateProgress();
+
+    const timer = setInterval(
+      updateProgress,
+      500
+    );
+
+    return () => clearInterval(timer);
+
+  }, [
+    jobId,
+    activeImageIndex,
+    generationFailed,
+    generationComplete,
+  ]);
+
+
+  const getImageProgress = (index) => {
+
+    if (previewImages[index]?.image) {
+      return 100;
+    }
+
+    if (index !== activeImageIndex) {
+      return 0;
+    }
+
+    const elapsed =
+      imageLoadingState.jobId === jobId &&
+      imageLoadingState.index === index
+        ? imageLoadingState.elapsed
+        : 0;
+
+    // Estimated visual progress.
+    // Only an available image reaches 100%.
+
+    const estimated = Math.floor(
+      95 * (1 - Math.exp(-elapsed / 22))
+    );
+
+    return Math.min(
+      95,
+      Math.max(0, estimated)
+    );
+  };
+
+  const availableImageKey = previewImages
+    .map(item => Boolean(item.image))
+    .join(",");
+
 
 
   const closePreview =
@@ -148,34 +333,37 @@ export default function ResultsPage() {
     };
 
 
-  const previousImage =
-    () => {
 
-      setPreviewIndex(
-        (current) =>
-          current === 0
-            ? previewImages.length -
-              1
-            : current - 1
-      );
+  const movePreview = (direction) => {
+    setPreviewIndex(current => {
 
-    };
+      if (current === null) {
+        return null;
+      }
 
+      for (
+        let step = 1;
+        step <= previewImages.length;
+        step++
+      ) {
+        const next = (
+          current +
+          direction * step +
+          previewImages.length
+        ) % previewImages.length;
 
-  const nextImage =
-    () => {
+        if (previewImages[next]?.image) {
+          return next;
+        }
+      }
 
-      setPreviewIndex(
-        (current) =>
-          current ===
-          previewImages.length -
-            1
-            ? 0
-            : current + 1
-      );
+      return current;
+    });
+  };
 
-    };
+  const previousImage = () => movePreview(-1);
 
+  const nextImage = () => movePreview(1);
 
   useEffect(() => {
 
@@ -236,7 +424,7 @@ export default function ResultsPage() {
 
   }, [
     previewIndex,
-    previewImages.length,
+    availableImageKey,
   ]);
 
 
@@ -487,7 +675,7 @@ export default function ResultsPage() {
   const downloadMeasurementPDF =
     async () => {
 
-      if (!job) {
+      if (!generationComplete) {
         return;
       }
 
@@ -878,23 +1066,77 @@ export default function ResultsPage() {
     };
 
 
-  if (!job) {
 
-    return (
-      <div className="loading-page">
-        Loading results...
-      </div>
-    );
-
-  }
 
 
   return (
     <div className="results-page">
 <style>{`
+
+  /* RESULTS INITIAL VIEW POSITION */
+
+  .results-page #ff-results-start {
+    scroll-margin-top: 24px;
+  }
+
+  .results-page .small-results-grid {
+    align-items: stretch !important;
+  }
+
+  .results-page .result-photo-stage {
+    overflow: hidden !important;
+  }
+
+  .results-page .result-photo-stage img {
+    object-fit: contain !important;
+    object-position: center !important;
+  }
+
+
+
+  /* FF_PREVIEW_ICON_ALIGNMENT */
+
+  .results-page .image-preview-close,
+  .results-page .image-preview-arrow {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0;
+    border-radius: 50% !important;
+  }
+
+  .results-page .image-preview-close {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .results-page .image-preview-arrow {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .results-page .image-preview-close svg,
+  .results-page .image-preview-arrow svg {
+    display: block !important;
+    flex-shrink: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    pointer-events: none;
+  }
+
+  .results-page .image-preview-arrow {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+
+
   .results-page .results-shell {
     width: 100%;
-    max-width: 1100px;
+    max-width: 1800px;
     margin: 0 auto;
   }
 
@@ -914,7 +1156,8 @@ export default function ResultsPage() {
 
   .results-page .small-results-grid {
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr)) !important;
     gap: 16px;
     align-items: stretch;
   }
@@ -1025,6 +1268,203 @@ export default function ResultsPage() {
     font-weight: 650;
   }
 
+
+  /* FASHIONFIT DIRECT RESULTS UI */
+
+  .results-page .ff-image-percentage-ring {
+    position: relative;
+    width: 105px;
+    height: 105px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .results-page .ff-image-percentage-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    overflow: visible;
+  }
+
+  .results-page .ff-image-ring-track {
+    fill: none;
+    stroke: #e5e7eb;
+    stroke-width: 7;
+  }
+
+  .results-page .ff-image-ring-progress {
+    fill: none;
+    stroke: #f97316;
+    stroke-width: 7;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s ease;
+  }
+
+  .results-page .ff-image-percentage-value {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 750;
+    color: #17243b;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .results-page .ff-image-loading-title {
+    font-size: 13px;
+    font-weight: 650;
+    color: #f97316;
+  }
+
+  .results-page .ff-image-loading-subtitle {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .results-page .ff-result-placeholder {
+    gap: 10px;
+    background: #f8fafc;
+  }
+
+  @media (max-width: 600px) {
+    .results-page .ff-image-percentage-ring {
+      width: 75px;
+      height: 75px;
+    }
+
+    .results-page .ff-image-percentage-value {
+      font-size: 18px;
+    }
+  }
+
+
+
+  .ff-results-progress {
+    margin-bottom: 20px;
+    padding: 16px 20px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+  }
+
+  .ff-results-progress-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    font-weight: 650;
+    color: #17243b;
+  }
+
+  .ff-results-progress-track {
+    height: 6px;
+    border-radius: 20px;
+    background: #e5e7eb;
+    overflow: hidden;
+  }
+
+  .ff-results-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: #f97316;
+    transition: width 0.4s ease;
+  }
+
+  .ff-results-progress-fill.complete {
+    background: #16a34a;
+  }
+
+  .ff-result-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    height: 100%;
+    color: #64748b;
+    font-size: 13px;
+    text-align: center;
+    padding: 12px;
+  }
+
+  .ff-result-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #fed7aa;
+    border-top-color: #f97316;
+    border-radius: 50%;
+    animation: ffResultSpin 0.8s linear infinite;
+  }
+
+  @keyframes ffResultSpin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .ff-results-error {
+    padding: 14px;
+    margin-top: 12px;
+    border-radius: 10px;
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+
+  .ff-results-connection {
+    color: #b45309;
+    font-size: 13px;
+    padding-top: 12px;
+  }
+
+  .results-page .clickable-result:disabled {
+    opacity: 1 !important;
+    cursor: default;
+  }
+
+  .results-page .download-pdf-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .results-page .results-complete-pill.pending {
+    background: #fff7ed !important;
+    color: #c2410c !important;
+  }
+
+  .results-page .results-complete-pill.failed {
+    background: #fef2f2 !important;
+    color: #b91c1c !important;
+  }
+
+  @media (max-width: 1000px) {
+    .results-page .small-results-grid {
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr)) !important;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .ff-results-progress {
+      padding: 12px;
+    }
+
+    .ff-results-progress-header {
+      font-size: 12px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ff-result-spinner {
+      animation: none;
+    }
+  }
+
   @media (max-width: 900px) {
     .results-page .measurement-fields {
       grid-template-columns: minmax(0, 1fr);
@@ -1077,6 +1517,222 @@ export default function ResultsPage() {
       grid-template-columns: minmax(0, 1fr);
     }
   }
+
+
+  /* COMPACT RESULTS SCREEN V2 */
+
+  .results-page {
+    padding-top: 8px !important;
+  }
+
+  .results-page .results-shell {
+    width: 100% !important;
+    max-width: 1800px !important;
+    margin: 0 auto !important;
+  }
+
+  /* Remove unnecessary introductory space */
+
+  .results-page .results-hero {
+    display: none !important;
+  }
+
+  .results-page .results-topbar {
+    display: none !important;
+  }
+
+  /* Position progress bar at top */
+
+  .results-page #ff-results-start {
+    scroll-margin-top: 8px !important;
+  }
+
+  .results-page .ff-results-progress {
+    margin-top: 0 !important;
+    margin-bottom: 20px !important;
+    padding: 15px 20px !important;
+    border-radius: 14px !important;
+  }
+
+  .results-page .ff-results-progress-header {
+    margin-bottom: 10px !important;
+    font-size: 13px !important;
+  }
+
+  .results-page .ff-results-progress-track {
+    height: 6px !important;
+  }
+
+  /* Four-image section */
+
+  .results-page .generated-results-section {
+    padding: 18px !important;
+    margin: 0 !important;
+    border-radius: 18px !important;
+  }
+
+  .results-page .generated-results-section .panel-head {
+    margin-bottom: 14px !important;
+    padding-bottom: 0 !important;
+  }
+
+  .results-page .generated-results-section .panel-badge {
+    width: fit-content !important;
+    max-width: 100% !important;
+  }
+
+  .results-page .generated-results-section h2 {
+    margin: 6px 0 !important;
+  }
+
+  .results-page .generated-results-section p {
+    margin: 4px 0 !important;
+  }
+
+  .results-page .small-results-grid {
+    gap: 16px !important;
+    align-items: stretch !important;
+  }
+
+  /* Reduce height only when the screen requires it */
+
+  @media (min-width: 1001px) {
+
+    .results-page .small-results-grid {
+      grid-template-columns:
+        repeat(4, minmax(0, 1fr)) !important;
+    }
+
+    .results-page .result-photo-stage {
+      height: min(
+        clamp(320px, 48vh, 620px),
+        max(220px, calc(100dvh - 235px))
+      ) !important;
+    }
+
+  }
+
+  .results-page .result-photo-stage img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+  }
+
+  .results-page .result-photo-label {
+    padding: 10px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Smaller preview navigation buttons */
+
+  .results-page .image-preview-arrow {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    border-radius: 50% !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+
+  .results-page .image-preview-arrow-left {
+    left: 10px !important;
+  }
+
+  .results-page .image-preview-arrow-right {
+    right: 10px !important;
+  }
+
+  .results-page .image-preview-close {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    top: 10px !important;
+    right: 10px !important;
+    border-radius: 50% !important;
+  }
+
+  .results-page .image-preview-arrow svg {
+    width: 15px !important;
+    height: 15px !important;
+    display: block !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .results-page .image-preview-close svg {
+    width: 14px !important;
+    height: 14px !important;
+    display: block !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Compact percentage loader */
+
+  .results-page .ff-image-percentage-ring {
+    width: 78px !important;
+    height: 78px !important;
+  }
+
+  .results-page .ff-image-percentage-value {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+  }
+
+  .results-page .ff-result-placeholder {
+    gap: 8px !important;
+  }
+
+  .results-page .ff-image-loading-title {
+    font-size: 13px !important;
+    margin: 0 !important;
+  }
+
+  .results-page .ff-image-loading-subtitle {
+    font-size: 11px !important;
+    color: #94a3b8 !important;
+  }
+
+  @media (max-width: 1000px) {
+
+    .results-page .small-results-grid {
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr)) !important;
+    }
+
+  }
+
+  @media (max-width: 600px) {
+
+    .results-page .generated-results-section {
+      padding: 12px !important;
+    }
+
+    .results-page .small-results-grid {
+      gap: 8px !important;
+    }
+
+    .results-page .ff-image-percentage-ring {
+      width: 65px !important;
+      height: 65px !important;
+    }
+
+  }
+
+
 `}</style>
 
       <div className="results-shell">
@@ -1095,9 +1751,24 @@ export default function ResultsPage() {
           </button>
 
 
-          <span className="results-complete-pill">
-            ✓ Generation Complete
-          </span>
+          <span
+  className={
+    "results-complete-pill " +
+    (
+      generationFailed
+        ? "failed"
+        : generationComplete
+          ? ""
+          : "pending"
+    )
+  }
+>
+  {generationFailed
+    ? "Generation Interrupted"
+    : generationComplete
+      ? "Generation Complete"
+      : `Generating ${readyCount}/4`}
+</span>
 
         </div>
 
@@ -1123,6 +1794,66 @@ export default function ResultsPage() {
 
         </div>
 
+
+
+        <div
+          id="ff-results-start"
+          className="ff-results-progress"
+        >
+
+          <div
+            className="ff-results-progress-header"
+            role="status"
+          >
+            <span>
+              {generationFailed
+                ? "Generation interrupted"
+                : generationComplete
+                  ? "All images generated"
+                  : "Generating your fashion preview"}
+            </span>
+
+            <span>
+              {readyCount}/4 Ready |
+              {" "}{Math.round(progress)}%
+            </span>
+          </div>
+
+          <div
+            className="ff-results-progress-track"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(progress)}
+          >
+            <div
+              className={
+                "ff-results-progress-fill " +
+                (generationComplete ? "complete" : "")
+              }
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          {connectionError && (
+            <div
+              className="ff-results-connection"
+              role="status"
+            >
+              {connectionError}
+            </div>
+          )}
+
+          {generationError && (
+            <div
+              className="ff-results-error"
+              role="alert"
+            >
+              {generationError}
+            </div>
+          )}
+
+        </div>
 
         <div className="results-workspace">
 
@@ -1150,8 +1881,8 @@ export default function ResultsPage() {
 
 
               <div className="four-view-badge">
-                4 Views
-              </div>
+  {readyCount}/4 Ready
+</div>
 
             </div>
 
@@ -1174,7 +1905,62 @@ export default function ResultsPage() {
             draggable={false}
           />
         ) : (
-          <span>Image unavailable</span>
+          <div className="ff-result-placeholder">
+
+  <div className="ff-image-percentage-ring">
+
+    <svg
+      viewBox="0 0 120 120"
+      className="ff-image-percentage-svg"
+      aria-hidden="true"
+    >
+
+      <circle
+        cx="60"
+        cy="60"
+        r="52"
+        className="ff-image-ring-track"
+      />
+
+      <circle
+        cx="60"
+        cy="60"
+        r="52"
+        className="ff-image-ring-progress"
+        strokeDasharray="326.7256"
+        strokeDashoffset={
+          326.7256 *
+          (1 - getImageProgress(index) / 100)
+        }
+      />
+
+    </svg>
+
+    <div className="ff-image-percentage-value">
+      {getImageProgress(index)}%
+    </div>
+
+  </div>
+
+  <span className="ff-image-loading-title">
+    {generationFailed
+      ? "Generation interrupted"
+      : job?.status === "completed"
+        ? "Image unavailable"
+        : index === activeImageIndex
+          ? "Generating..."
+          : "Waiting..."}
+  </span>
+
+  <span className="ff-image-loading-subtitle">
+    {generationFailed
+      ? item.title
+      : index === activeImageIndex
+        ? "Estimated progress"
+        : "Waiting in queue"}
+  </span>
+
+</div>
         )}
       </div>
 
@@ -1527,6 +2313,7 @@ export default function ResultsPage() {
 
           <button
             className="download-pdf-button"
+            disabled={!generationComplete}
             onClick={
               downloadMeasurementPDF
             }
@@ -1588,9 +2375,21 @@ export default function ResultsPage() {
                     closePreview
                   }
                   type="button"
-                >
-                  &#215;
-                </button>
+                 aria-label="Close image preview">
+
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <path d="M6 6L18 18M18 6L6 18" />
+        </svg>
+    </button>
 
 
                 <button
@@ -1599,9 +2398,22 @@ export default function ResultsPage() {
                     previousImage
                   }
                   type="button"
-                >
-                  &#8249;
-                </button>
+                 aria-label="Previous image">
+
+        <svg
+          width="26"
+          height="26"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M15 5L8 12L15 19" />
+        </svg>
+    </button>
 
 
                 <button
@@ -1610,9 +2422,22 @@ export default function ResultsPage() {
                     nextImage
                   }
                   type="button"
-                >
-                  &#8250;
-                </button>
+                 aria-label="Next image">
+
+        <svg
+          width="26"
+          height="26"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M9 5L16 12L9 19" />
+        </svg>
+    </button>
 
               </div>
 

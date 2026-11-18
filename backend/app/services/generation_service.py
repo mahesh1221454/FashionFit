@@ -241,7 +241,12 @@ def generate_view(
         person_image_path,
         view,
         str(job.id),
-                 usage_job_id=str(job.id),
+                 customer_image_paths={
+            "front": job.front_image_url,
+            "left": job.left_image_url,
+            "right": job.right_image_url,
+            "back": job.back_image_url,
+        }, usage_job_id=str(job.id),
         identity_image_path=job.front_image_url,
              )
 

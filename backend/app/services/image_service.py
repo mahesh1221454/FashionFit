@@ -1227,6 +1227,212 @@ def generated_bytes_to_pil(
 # GENERATE SINGLE TRY-ON IMAGE
 # =========================================================
 
+
+
+# =========================================================
+# FASHIONFIT_V41_DIRECTION_VALIDATION
+# =========================================================
+
+import json
+
+
+STRICT_VIEW_PROMPTS = {
+    "front": """
+Generate a strict FRONT view.
+
+The customer must face directly toward the camera.
+Both eyes and the front of the torso must be visible.
+Head, shoulders, knees and feet must face forward.
+Do not generate a side or rear-facing pose.
+Return a complete head-to-foot photograph.
+""",
+
+    "left": """
+Generate a strict LEFT-facing side profile.
+
+The nose, chest, knees and toes must point toward
+the LEFT EDGE of the output image.
+
+Only the near-side facial profile should be visible.
+Do not face toward the right edge.
+Do not generate a three-quarter view.
+Do not mirror another photograph.
+Preserve anatomical accessory placement.
+""",
+
+    "right": """
+Generate a strict RIGHT-facing side profile.
+
+The nose, chest, knees and toes must point toward
+the RIGHT EDGE of the output image.
+
+This must be the opposite viewing direction
+from the LEFT-facing result.
+
+Do not generate a left-facing profile.
+Do not duplicate or mirror the left-view image.
+Do not generate a three-quarter view.
+Preserve anatomical accessory placement.
+""",
+
+    "back": """
+Generate a strict BACK view.
+
+The customer must face completely away from the camera.
+Show the back of the head, torso, garment and footwear.
+The eyes, nose and mouth must not be visible.
+Do not turn the head toward either shoulder.
+Do not generate a side or three-quarter rear view.
+"""
+}
+
+
+def validate_generated_direction(
+    image,
+    expected_view,
+    job_id=None,
+    attempt=1,
+):
+
+    enabled = os.getenv(
+        "VIEW_VALIDATION_ENABLED",
+        "true",
+    ).strip().lower() == "true"
+
+    if not enabled:
+        return True, "Validation disabled"
+
+    model = os.getenv(
+        "VIEW_VALIDATION_MODEL",
+        "",
+    ).strip()
+
+    if not model:
+        raise RuntimeError(
+            "VIEW_VALIDATION_MODEL is not configured."
+        )
+
+    validation_prompt = """
+You are a strict image orientation quality inspector.
+
+Analyze the actual image pixels.
+
+Do not assume the requested pose is correct.
+
+Classify the person into exactly one category:
+
+front:
+Face and torso directly toward the camera.
+
+left:
+Nose and body pointing toward the left image edge.
+
+right:
+Nose and body pointing toward the right image edge.
+
+back:
+Person facing away from the camera with no visible face.
+
+invalid:
+Three-quarter view, ambiguous direction,
+conflicting head and torso orientation,
+multiple people or incorrect pose.
+
+Also check whether the complete body, including
+head and footwear, is visible.
+
+Return only JSON using this exact structure:
+
+{
+    "detected_view": "front",
+    "full_body_visible": true,
+    "body_alignment_valid": true,
+    "reason": ""
+}
+"""
+
+    started_at = time.perf_counter()
+
+    try:
+        response = client.models.generate_content(
+            model=model,
+            contents=[
+                validation_prompt,
+                image,
+            ],
+            config=types.GenerateContentConfig(
+                temperature=0,
+                response_mime_type="application/json",
+            ),
+        )
+
+        record_gemini_usage(
+            model_name=model,
+            view_name=expected_view,
+            attempt_number=attempt,
+            status="success",
+            duration_ms=elapsed_milliseconds(
+                started_at
+            ),
+            response=response,
+            job_id=job_id,
+        )
+
+    except Exception as error:
+
+        record_gemini_usage(
+            model_name=model,
+            view_name=expected_view,
+            attempt_number=attempt,
+            status="failed",
+            duration_ms=elapsed_milliseconds(
+                started_at
+            ),
+            error=error,
+            job_id=job_id,
+        )
+
+        raise RuntimeError(
+            f"View validation API failed: {error}"
+        ) from error
+
+    try:
+        result = json.loads(response.text)
+
+        detected = str(
+            result.get("detected_view", "invalid")
+        ).strip().lower()
+
+        valid = (
+            detected == expected_view
+            and result.get(
+                "full_body_visible"
+            ) is True
+            and result.get(
+                "body_alignment_valid"
+            ) is True
+        )
+
+        reason = (
+            f"Expected={expected_view}, "
+            f"Detected={detected}, "
+            f"Details={result.get('reason', '')}"
+        )
+
+        print(
+            f"[V4.1 VALIDATION] "
+            f"{'PASS' if valid else 'FAIL'}: "
+            f"{reason}"
+        )
+
+        return valid, reason
+
+    except Exception as error:
+        raise RuntimeError(
+            f"Invalid view validation response: {error}"
+        ) from error
+
+
 def generate_single_image(
     design_image_path: str,
     person_image_path: str,
@@ -1421,7 +1627,28 @@ def generate_single_image(
     # BUILD PROMPT
     # =====================================================
 
-    prompt = build_tryon_prompt(view)
+
+    validation_enabled = os.getenv(
+        "VIEW_VALIDATION_ENABLED",
+        "true",
+    ).strip().lower() == "true"
+
+    if validation_enabled and not os.getenv(
+        "VIEW_VALIDATION_MODEL",
+        "",
+    ).strip():
+        raise RuntimeError(
+            "VIEW_VALIDATION_MODEL is not configured."
+        )
+
+    prompt = (
+        build_tryon_prompt(view)
+        + "\\n\\nSTRICT OUTPUT DIRECTION:"
+        + STRICT_VIEW_PROMPTS[view]
+        + "\\nThe strict output direction takes priority "
+          "over any conflicting pose instructions."
+    )
+
 
 
     # =====================================================
@@ -1500,107 +1727,141 @@ def generate_single_image(
             "and footwear appearance."
         )
 
-    response = call_gemini_with_retry(
-        customer_images=customer_images,
-        prompt=prompt,
-        design_image=design_image,
-        person_image=person_image,
-        view=view,
-        job_id=usage_job_id,
-        identity_image=person_image,
-        footwear_reference=front_outfit_reference,
+
+    # =====================================================
+    # V4.1 GENERATION AND DIRECTION VALIDATION
+    # =====================================================
+
+    max_regenerations = int(
+        os.environ[
+            "VIEW_MAX_REGENERATION_ATTEMPTS"
+        ]
     )
 
-
-    # =====================================================
-    # GET RAW IMAGE BYTES
-    # =====================================================
-
-    image_bytes = (
-        extract_generated_image_bytes(
-            response,
-            view,
-        )
-    )
-
-
-    print(
-        f"[OUTPUT] Received "
-        f"{len(image_bytes)} bytes "
-        f"for {view.upper()} view."
-    )
-
-
-    # =====================================================
-    # CONVERT TO PIL
-    # =====================================================
-
-    generated_pil = (
-        generated_bytes_to_pil(
-            image_bytes,
-            view,
-        )
-    )
-
-
-    # =====================================================
-    # OUTPUT ORIENTATION
-    # =====================================================
-    #
-    # Our fashion result should normally be portrait.
-    #
-    # However, do NOT blindly rotate every landscape result
-    # multiple times. We perform exactly one correction here.
-    # =====================================================
-
-    output_width, output_height = (
-        generated_pil.size
-    )
-
-
-    if (
-        output_width >
-        output_height
-    ):
-
-        print(
-            f"[OUTPUT] Landscape generated "
-            f"result detected: "
-            f"{output_width}x{output_height}"
+    if max_regenerations < 0:
+        raise ValueError(
+            "Invalid regeneration attempt configuration."
         )
 
+    if not validation_enabled:
+        max_regenerations = 0
 
-        print(
-            "[OUTPUT] Rotating result "
-            "90Â° clockwise."
-        )
+    correction = ""
+    generated_pil = None
+    accepted = False
+    rejection_reason = ""
 
+    # Reject mislabeled customer photographs before
+    # spending tokens on image generation.
 
-        generated_pil = (
-            generated_pil.transpose(
-                Image.Transpose.ROTATE_270
+    if validation_enabled:
+
+        input_valid, input_reason = (
+            validate_generated_direction(
+                image=person_image,
+                expected_view=view,
+                job_id=usage_job_id,
+                attempt=1,
             )
         )
 
+        if not input_valid:
+            raise RuntimeError(
+                f"Incorrect customer {view} photograph. "
+                f"{input_reason}. "
+                "Please upload the correct viewing angle."
+            )
+
+    for quality_attempt in range(
+        1,
+        max_regenerations + 2,
+    ):
 
         print(
-            f"[OUTPUT] Corrected result: "
-            f"{generated_pil.size[0]}x"
-            f"{generated_pil.size[1]}"
+            f"[V4.1] {view.upper()} "
+            f"quality attempt {quality_attempt}/"
+            f"{max_regenerations + 1}"
         )
 
+        response = call_gemini_with_retry(
+            customer_images=customer_images,
+            prompt=prompt + correction,
+            design_image=design_image,
+            person_image=person_image,
+            view=view,
+            job_id=usage_job_id,
+            identity_image=person_image,
+            footwear_reference=front_outfit_reference,
+        )
 
-    else:
+        image_bytes = (
+            extract_generated_image_bytes(
+                response,
+                view,
+            )
+        )
+
+        generated_pil = generated_bytes_to_pil(
+            image_bytes,
+            view,
+        )
+
+        if generated_pil.width > generated_pil.height:
+
+            # Rotating a landscape image does not
+            # correct the actual human viewing direction.
+
+            accepted = False
+
+            rejection_reason = (
+                "Generated image must be upright "
+                "and portrait-oriented."
+            )
+
+        else:
+
+            accepted, rejection_reason = (
+                validate_generated_direction(
+                    image=generated_pil,
+                    expected_view=view,
+                    job_id=usage_job_id,
+                    attempt=quality_attempt,
+                )
+            )
+
+        if accepted:
+
+            print(
+                f"[V4.1] {view.upper()} "
+                "accepted successfully."
+            )
+
+            break
 
         print(
-            "[OUTPUT] Generated result "
-            "is already portrait."
+            f"[V4.1] {view.upper()} rejected: "
+            f"{rejection_reason}"
         )
 
+        correction = (
+            "\\n\\nPREVIOUS OUTPUT WAS REJECTED."
+            "\\nReason: "
+            + rejection_reason
+            + "\\nGenerate a new image."
+            + "\\nFollow the exact requested direction."
+            + "\\nDo not repeat the previous pose."
+            + "\\n"
+            + STRICT_VIEW_PROMPTS[view]
+        )
 
-    # =====================================================
-    # SAVE FINAL PNG
-    # =====================================================
+    if not accepted:
+        raise RuntimeError(
+            f"Unable to generate a valid {view} image "
+            f"after {max_regenerations + 1} attempts. "
+            f"{rejection_reason}"
+        )
+
+    # Save only the validated image.
 
     try:
 

@@ -55,7 +55,6 @@ const PHOTO_VIEWS = [
   { key: "front", label: "Front View" },
   { key: "left", label: "Left View" },
   { key: "right", label: "Right View" },
-  { key: "back", label: "Back View" },
 ];
 
 function getErrorMessage(error) {
@@ -225,7 +224,6 @@ export default function CustomDressPage() {
     front: null,
     left: null,
     right: null,
-    back: null,
   });
 
   const [saving, setSaving] = useState(false);
@@ -1026,7 +1024,7 @@ export default function CustomDressPage() {
               <div className="tryon-section-title">
                 <h2>2. Upload Customer Photographs</h2>
                 <p>
-                  Provide four views of the person
+                  Provide three views of the person
                   who will try on the dress.
                 </p>
               </div>
@@ -1092,7 +1090,6 @@ export default function CustomDressPage() {
                     front: null,
                     left: null,
                     right: null,
-                    back: null,
                   });
                   setError("");
                 }}

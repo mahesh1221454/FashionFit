@@ -257,13 +257,12 @@ export const createGeneration = async ({
   front,
   left,
   right,
-  back,
 }) => {
   if (!design_id) {
     throw new Error("Design ID is missing.");
   }
 
-  const images = { front, left, right, back };
+  const images = { front, left, right };
 
   const missing = Object.entries(images)
     .filter(([, file]) => !file)
@@ -299,14 +298,12 @@ export const createTemporaryGeneration = async ({
   front,
   left,
   right,
-  back,
 }) => {
   const images = {
     dress,
     front,
     left,
     right,
-    back,
   };
 
   const missing = Object.entries(images)
@@ -336,6 +333,26 @@ export const createTemporaryGeneration = async ({
 // =====================================================
 // GENERATION STATUS
 // =====================================================
+
+// =====================================================
+// FASHIONFIT V5 - RETRY FAILED GENERATION
+// =====================================================
+
+export const retryGeneration = async (jobId) => {
+  if (!jobId || typeof jobId !== "string") {
+    throw new Error("Generation job ID is missing.");
+  }
+
+  const isTemporary = jobId.startsWith("temp_");
+
+  const endpoint = isTemporary
+    ? `/temporary-generation/${encodeURIComponent(jobId)}/retry`
+    : `/generation/${encodeURIComponent(jobId)}/retry`;
+
+  const response = await api.post(endpoint);
+
+  return response.data;
+};
 
 export const getGeneration = async (jobId) => {
   if (!jobId) {

@@ -81,14 +81,13 @@ def validate_user_images(
     job: GenerationJob,
 ):
     """
-    Ensure all four uploaded user images exist.
+    Ensure all three uploaded user images exist.
     """
 
     images = {
         "front": job.front_image_url,
         "left": job.left_image_url,
         "right": job.right_image_url,
-        "back": job.back_image_url,
     }
 
     for view, image_path in images.items():
@@ -245,7 +244,6 @@ def generate_view(
             "front": job.front_image_url,
             "left": job.left_image_url,
             "right": job.right_image_url,
-            "back": job.back_image_url,
         }, usage_job_id=str(job.id),
         identity_image_path=job.front_image_url,
              )
@@ -318,7 +316,6 @@ def process_generation(
     5. Generate front.
     6. Generate left.
     7. Generate right.
-    8. Generate back.
     9. Save output URLs.
     10. Mark completed.
 
@@ -490,7 +487,7 @@ def process_generation(
             person_image_path=(
                 job.left_image_url
             ),
-            progress_after=55,
+            progress_after=65,
         )
 
 
@@ -507,24 +504,6 @@ def process_generation(
             view="right",
             person_image_path=(
                 job.right_image_url
-            ),
-            progress_after=75,
-        )
-
-
-        # =================================================
-        # BACK VIEW
-        # =================================================
-
-        back_url = generate_view(
-            db=db,
-            job=job,
-            design_image_path=(
-                design_image_path
-            ),
-            view="back",
-            person_image_path=(
-                job.back_image_url
             ),
             progress_after=95,
         )
@@ -594,10 +573,6 @@ def process_generation(
             f"Right: {right_url}"
         )
 
-        print(
-            f"[GENERATION] "
-            f"Back: {back_url}"
-        )
 
         print(
             "=========================================="

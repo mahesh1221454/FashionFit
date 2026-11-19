@@ -6,14 +6,12 @@ const VIEWS = [
   { key: "front", label: "Front View" },
   { key: "left", label: "Left Side" },
   { key: "right", label: "Right Side" },
-  { key: "back", label: "Back View" },
 ];
 
 const EMPTY_VIEWS = {
   front: null,
   left: null,
   right: null,
-  back: null,
 };
 
 /**
@@ -30,11 +28,10 @@ const EMPTY_VIEWS = {
  *     front: imageUrlOrNull,
  *     left: imageUrlOrNull,
  *     right: imageUrlOrNull,
- *     back: imageUrlOrNull
  *   }
  *
  * onComplete(response):
- *   Optional callback when all four images are ready.
+ *   Optional callback when all three images are ready.
  *
  * isJobFinished(response):
  *   Optional backend-specific completion check.
@@ -245,7 +242,7 @@ export default function LiveTryOnProgress({
 
         .live-tryon-grid {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 12px;
         }
 
@@ -374,7 +371,7 @@ export default function LiveTryOnProgress({
 
         <div className="live-tryon-progress-label">
           <span>Generation progress</span>
-          <strong>{readyCount} of 4 ready</strong>
+          <strong>{readyCount} of {VIEWS.length} ready</strong>
         </div>
 
         <div
@@ -382,7 +379,7 @@ export default function LiveTryOnProgress({
           role="progressbar"
           aria-label="Ready image views"
           aria-valuemin={0}
-          aria-valuemax={4}
+          aria-valuemax={VIEWS.length}
           aria-valuenow={readyCount}
         >
           <div

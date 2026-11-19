@@ -91,7 +91,9 @@ function ImageGallery({ title, images, onPreview }) {
       <h3>{title}</h3>
 
       <div className="gh-image-grid">
-        {VIEWS.map((view) => {
+        {VIEWS.filter(
+          (view) => view !== "back" || Boolean(images?.back)
+        ).map((view) => {
           const image = images?.[view];
           const available =
             Boolean(image?.url) && image?.exists;
@@ -629,7 +631,9 @@ export default function GenerationHistoryPanel({
                     </thead>
 
                     <tbody>
-                      {VIEWS.map((view) => {
+                      {VIEWS.filter(
+                        (view) => view !== "back" || Boolean(byView.back?.attempts)
+                      ).map((view) => {
                         const entry = byView[view] || {};
 
                         return (

@@ -17,7 +17,6 @@ const VIEWS = [
   { key: "front", label: "Front View" },
   { key: "left", label: "Left View" },
   { key: "right", label: "Right View" },
-  { key: "back", label: "Back View" },
 ];
 
 const ZOOM_LEVELS = [1, 1.5, 2, 3, 4];
@@ -427,7 +426,7 @@ export default function GenerationProgress({
     (image) => Boolean(image.url)
   ).length;
 
-  const complete = readyCount === 4;
+  const complete = readyCount === VIEWS.length;
   const failed = job?.status === "failed";
 
   const started =
@@ -494,7 +493,7 @@ export default function GenerationProgress({
           }`}
         >
           {complete && <Check size={14} />}
-          {readyCount}/4 Ready
+          {readyCount}/{VIEWS.length} Ready
         </span>
       </header>
 
@@ -505,13 +504,13 @@ export default function GenerationProgress({
         role="progressbar"
         aria-label="Generation progress"
         aria-valuemin={0}
-        aria-valuemax={4}
+        aria-valuemax={VIEWS.length}
         aria-valuenow={readyCount}
       >
         <div
           className={complete ? "complete" : ""}
           style={{
-            width: `${(readyCount / 4) * 100}%`,
+            width: `${(readyCount / VIEWS.length) * 100}%`,
           }}
         />
       </div>
@@ -572,7 +571,7 @@ export default function GenerationProgress({
               {VIEWS.findIndex(
                 (view) => view.key === selectedKey
               ) + 1}{" "}
-              / 4
+              / {VIEWS.length}
             </span>
           </div>
 
@@ -1278,7 +1277,7 @@ const STYLES = `
     .ffg-modal-thumbnails {
       grid-row: 2;
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 6px;
     }
 

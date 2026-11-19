@@ -118,7 +118,8 @@ export default function ImageUploader({
           position: relative;
           width: 100%;
           min-width: 0;
-          height: 220px;
+          height: auto;
+          aspect-ratio: 3 / 4;
           border: 1.5px dashed #dce1e8;
           border-radius: 16px;
           overflow: hidden;
@@ -172,7 +173,7 @@ export default function ImageUploader({
         }
 
         .ff-upload-image-area {
-          height: 174px;
+          height: calc(100% - 46px);
           padding: 12px;
           display: flex;
           align-items: center;
@@ -354,11 +355,11 @@ export default function ImageUploader({
 
         @media (max-width: 600px) {
           .ff-upload-card {
-            height: 190px;
+            height: auto;
           }
 
           .ff-upload-image-area {
-            height: 144px;
+            height: calc(100% - 46px);
           }
 
           .ff-upload-footer {

@@ -446,16 +446,22 @@ def serialize_job(job, include_details=False, db=None):
     if not include_details:
         return result
 
+    job_views = (
+        VIEWS
+        if job.back_image_url or job.output_back_url
+        else VIEWS[:3]
+    )
+
     result["uploaded_images"] = {
         view: upload_image_details(
             getattr(job, f"{view}_image_url")
         )
-        for view in VIEWS
+        for view in job_views
     }
 
     result["generated_images"] = {
         view: generated_image_details(job, view)
-        for view in VIEWS
+        for view in job_views
     }
 
     records = (

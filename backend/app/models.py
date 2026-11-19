@@ -158,7 +158,7 @@ class GenerationJob(Base):
 
     back_image_url = Column(
         Text,
-        nullable=False,
+        nullable=True,
     )
 
     status = Column(

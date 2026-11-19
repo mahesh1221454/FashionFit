@@ -306,9 +306,15 @@ Never use the garment reference person's face, head, hairstyle,
 skin, body shape or personal identity.
 
 ADDITIONAL CUSTOMER REFERENCE:
-If another customer photograph is provided, use it only to
-reinforce the original customer's identity. Do not copy its
-camera angle into the requested output.
+If additional customer photographs are provided,
+use them to reinforce the original customer's identity,
+body proportions and missing anatomical details.
+
+Do not copy their camera angles into the requested output.
+
+The primary customer photograph determines the requested
+viewing direction. Supplementary photographs support
+identity preservation and realistic body reconstruction.
 
 PRIORITY ORDER:
 
@@ -529,12 +535,12 @@ remain unchanged in subsequent views when a generated
 front-outfit reference is provided.
 
 Do not independently redesign or recolor footwear for
-the left, right or back view.
+the left or right view.
 
 Show the same footwear from the requested camera angle.
 
 
-SECTION 6: FOUR-VIEW OUTFIT CONSISTENCY
+SECTION 6: THREE-VIEW OUTFIT CONSISTENCY
 
 All images belong to the same virtual try-on session.
 
@@ -584,10 +590,42 @@ Maintain:
 
 Preserve the customer's original pose and body direction.
 
-Keep the person fully visible from head to footwear
-whenever the input image and framing allow.
+FULL-BODY RECONSTRUCTION:
 
-Do not crop out the head or feet unnecessarily.
+Generate a complete head-to-toe photograph even when
+the original customer reference photograph is cropped.
+
+If any body part is outside the image boundaries,
+partially visible or obscured, reconstruct that portion
+naturally using the available customer reference images.
+
+Use the other customer photographs to understand the
+person's body proportions wherever possible.
+
+When a body part is not visible in any customer reference,
+estimate its natural appearance using the visible anatomy,
+body proportions and realistic human structure.
+
+Reconstruct missing arms, hands, legs, ankles and feet
+when required.
+
+Preserve all identifiable customer features and visible
+body proportions.
+
+Do not unnecessarily change the visible face, body shape,
+height proportions, complexion or hairstyle.
+
+Never use the garment model or mannequin anatomy to
+reconstruct the customer's body.
+
+Maintain realistic anatomical proportions and consistent
+body appearance across front, left and right views.
+
+The generated image must show the complete person
+from head to footwear, without unnecessary cropping.
+
+Follow the existing footwear selection and outfit
+consistency rules.
 
 Avoid artificial or excessively stylized appearance.
 
@@ -828,6 +866,7 @@ def build_v4_reference_contents(
     person_image,
     design_image,
     outfit_reference=None,
+    customer_images=None,
 ):
     """
     V4_IMAGE_REFERENCE_MAPPING
@@ -866,10 +905,32 @@ def build_v4_reference_contents(
             outfit_reference,
         ])
 
+    if customer_images:
+        for reference_view in ("front", "left", "right"):
+            if reference_view == view:
+                continue
+
+            reference_image = customer_images.get(reference_view)
+
+            if reference_image is None:
+                continue
+
+            contents.extend([
+                f"SUPPLEMENTARY CUSTOMER {reference_view.upper()} "
+                "PHOTOGRAPH. This is the same customer. "
+                "Use it to understand identity, body proportions "
+                "and missing anatomical details. "
+                "Do not copy its viewing direction or clothing "
+                "into the requested output.",
+
+                reference_image,
+            ])
+
     contents.extend([
         "FINAL INSTRUCTIONS: Apply the following rules "
         "to IMAGE 1. Identity and viewing direction must "
-        "come from IMAGE 1 only.",
+        "follow IMAGE 1. Supplementary customer references "
+        "may support identity and anatomical reconstruction.",
 
         prompt,
     ])
@@ -913,6 +974,7 @@ def call_gemini_with_retry(
                     person_image=person_image,
                     design_image=design_image,
                     outfit_reference=footwear_reference,
+                    customer_images=customer_images,
                 )
                 ),
                 config=types.GenerateContentConfig(
@@ -1292,6 +1354,7 @@ def validate_generated_direction(
     expected_view,
     job_id=None,
     attempt=1,
+    customer_input=False,
 ):
 
     enabled = os.getenv(
@@ -1351,6 +1414,72 @@ Return only JSON using this exact structure:
 }
 """
 
+    if customer_input:
+        validation_prompt = (
+            '''
+You are a customer photograph viewing-direction inspector.
+
+Analyze the actual visible photograph.
+
+Classify the person's viewing direction into exactly one
+of the following categories:
+
+front:
+The visible face and body face toward the camera.
+
+left:
+The visible face and body point toward the left image edge.
+
+right:
+The visible face and body point toward the right image edge.
+
+back:
+The person faces away from the camera.
+
+invalid:
+No identifiable person, multiple people, conflicting
+orientation or a direction that cannot be reliably identified.
+
+CUSTOMER INPUT VALIDATION RULES:
+
+Full-body visibility is NOT required.
+
+Never reject a photograph because of:
+
+- Missing or cropped feet.
+- Cropped legs or arms.
+- Missing footwear.
+- Wearing socks.
+- Wearing shoes.
+- Being barefoot.
+- Partial body visibility.
+- Clothing style or color.
+- Background.
+- Natural body shape.
+- Minor posture differences.
+- Minor lighting or framing differences.
+
+Use the visible anatomical features to identify direction.
+
+If sufficient visual information is available to determine
+the direction, return the detected direction.
+
+Missing body parts will be reconstructed during image generation.
+
+Do not classify a photograph as invalid merely because
+some body parts are not visible.
+
+Do not guess the viewing direction when it cannot be identified.
+
+Return only JSON using this exact structure:
+
+{
+    "detected_view": "front",
+    "reason": ""
+}
+'''
+        )
+
     started_at = time.perf_counter()
 
     try:
@@ -1403,15 +1532,27 @@ Return only JSON using this exact structure:
             result.get("detected_view", "invalid")
         ).strip().lower()
 
-        valid = (
-            detected == expected_view
-            and result.get(
-                "full_body_visible"
-            ) is True
-            and result.get(
-                "body_alignment_valid"
-            ) is True
-        )
+        if customer_input:
+
+            # Customer images require an identifiable
+            # matching direction, not full-body visibility.
+            valid = (
+                detected in {"front", "left", "right"}
+                and detected == expected_view
+            )
+
+        else:
+
+            # Preserve strict generated-output validation.
+            valid = (
+                detected == expected_view
+                and result.get(
+                    "full_body_visible"
+                ) is True
+                and result.get(
+                    "body_alignment_valid"
+                ) is True
+            )
 
         reason = (
             f"Expected={expected_view}, "
@@ -1433,6 +1574,21 @@ Return only JSON using this exact structure:
         ) from error
 
 
+def validate_customer_direction(
+    image,
+    expected_view,
+    job_id=None,
+    attempt=1,
+):
+    return validate_generated_direction(
+        image=image,
+        expected_view=expected_view,
+        job_id=job_id,
+        attempt=attempt,
+        customer_input=True,
+    )
+
+
 def generate_single_image(
     design_image_path: str,
     person_image_path: str,
@@ -1450,7 +1606,6 @@ def generate_single_image(
         "front",
         "left",
         "right",
-        "back",
     }
 
 
@@ -1656,11 +1811,11 @@ def generate_single_image(
     # =====================================================
 
 
-    required_views = ("front", "left", "right", "back")
+    required_views = ("front", "left", "right")
 
     if not customer_image_paths:
         raise ValueError(
-            "All four customer photographs are required."
+            "All three customer photographs are required."
         )
 
     customer_images = {}
@@ -1684,7 +1839,7 @@ def generate_single_image(
             )
 
     print(
-        f"[MULTI-ANGLE] Prepared all four customer references "
+        f"[MULTI-ANGLE] Prepared all three customer references "
         f"for {view.upper()} generation."
     )
 
@@ -1757,7 +1912,7 @@ def generate_single_image(
     if validation_enabled:
 
         input_valid, input_reason = (
-            validate_generated_direction(
+            validate_customer_direction(
                 image=person_image,
                 expected_view=view,
                 job_id=usage_job_id,
@@ -1767,9 +1922,10 @@ def generate_single_image(
 
         if not input_valid:
             raise RuntimeError(
-                f"Incorrect customer {view} photograph. "
+                f"Unable to verify the customer {view} viewing angle. "
                 f"{input_reason}. "
-                "Please upload the correct viewing angle."
+                f"Please upload a photograph with an identifiable "
+                f"{view} viewing direction."
             )
 
     for quality_attempt in range(

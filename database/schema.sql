@@ -66,8 +66,7 @@ CREATE TABLE IF NOT EXISTS generation_jobs (
     right_image_url TEXT
     NOT NULL,
 
-    back_image_url TEXT
-    NOT NULL,
+    back_image_url TEXT,
 
     status VARCHAR(50)
     DEFAULT 'pending',

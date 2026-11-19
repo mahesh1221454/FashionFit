@@ -63,7 +63,6 @@ export default function DesignDetailsPage() {
     front: null,
     left: null,
     right: null,
-    back: null,
   });
 
 
@@ -274,23 +273,21 @@ export default function DesignDetailsPage() {
         front,
         left,
         right,
-        back,
       } = files;
 
 
       // =====================================================
-      // VALIDATE 4 FILES
+      // VALIDATE 3 FILES
       // =====================================================
 
       if (
         !front ||
         !left ||
-        !right ||
-        !back
+        !right
       ) {
 
         alert(
-          "Please upload all four customer images."
+          "Please upload all three customer images."
         );
 
 
@@ -343,10 +340,6 @@ export default function DesignDetailsPage() {
         );
 
 
-        console.log(
-          "BACK FILE:",
-          back
-        );
 
 
         // ===================================================
@@ -367,8 +360,6 @@ export default function DesignDetailsPage() {
             right:
               right,
 
-            back:
-              back,
           });
 
 
@@ -658,7 +649,7 @@ export default function DesignDetailsPage() {
 
 
               <p>
-                Add four clear full-body
+                Add three clear full-body
                 photographs to generate
                 a consistent multi-angle
                 fashion preview.
@@ -676,7 +667,7 @@ export default function DesignDetailsPage() {
               <div>
 
                 <strong>
-                  {uploadedCount}/4
+                  {uploadedCount}/3
                 </strong>
 
 
@@ -693,8 +684,8 @@ export default function DesignDetailsPage() {
                   style={{
                     width:
                       `${
-                        uploadedCount *
-                        25
+                        uploadedCount / 3 *
+                        100
                       }%`,
                   }}
                 />
@@ -765,22 +756,7 @@ export default function DesignDetailsPage() {
               />
 
 
-              <ImageUploader
-                disabled={loading}
-                label="Back View"
 
-                file={
-                  files.back
-                }
-
-                onChange={
-                  (file) =>
-                    handleFileChange(
-                      "back",
-                      file
-                    )
-                }
-              />
 
 
             </div>

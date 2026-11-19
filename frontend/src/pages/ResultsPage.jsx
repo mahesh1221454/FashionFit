@@ -16,8 +16,32 @@ import {
 
 import {
   getGeneration,
+  retryGeneration,
 } from "../services/api";
 
+
+// FF_REFRESH_RETRY_V5
+
+const refreshRetryConsumed = new Set();
+
+const initialNavigation =
+  window.performance
+    .getEntriesByType("navigation")[0];
+
+const isBrowserRefresh = () => {
+  if (initialNavigation?.type !== "reload") {
+    return false;
+  }
+
+  const initialUrl = new URL(
+    initialNavigation.name
+  );
+
+  return (
+    initialUrl.pathname === window.location.pathname &&
+    initialUrl.search === window.location.search
+  );
+};
 
 export default function ResultsPage() {
   const {
@@ -77,6 +101,9 @@ export default function ResultsPage() {
   useEffect(() => {
     let active = true;
     let timer = null;
+    let initialStatusChecked = false;
+
+    const canRetryOnRefresh = isBrowserRefresh();
 
     setJob(null);
     setPreviewIndex(null);
@@ -94,23 +121,121 @@ export default function ResultsPage() {
 
         if (!active) return;
 
-        setJob(data);
+        const shouldRetry =
+          !initialStatusChecked &&
+          canRetryOnRefresh &&
+          !refreshRetryConsumed.has(jobId) &&
+          data.status === "failed";
+
+        initialStatusChecked = true;
+
+        if (canRetryOnRefresh) {
+          refreshRetryConsumed.add(jobId);
+        }
+
+        setJob(
+          shouldRetry
+            ? { ...data, status: "pending" }
+            : data
+        );
+
         setConnectionError("");
 
         if (data.status === "failed") {
+
+          if (shouldRetry) {
+
+            setGenerationError("");
+
+            setConnectionError(
+              "Retrying unfinished images..."
+            );
+
+            try {
+
+              const retryResult =
+                await retryGeneration(jobId);
+
+              if (!active) return;
+
+              if (
+                retryResult.status === "pending" ||
+                retryResult.status === "processing" ||
+                retryResult.status === "generating" ||
+                retryResult.status === "completed"
+              ) {
+
+                setJob({
+                  ...data,
+                  status: retryResult.status === "completed"
+                    ? "processing"
+                    : retryResult.status,
+                  error_message: null,
+                });
+
+                setGenerationError("");
+                setConnectionError("");
+
+                console.info(
+                  "[FashionFit V5] Refresh retry:",
+                  retryResult
+                );
+
+                timer = setTimeout(load, 1000);
+
+                return;
+              }
+
+              setJob(data);
+              setConnectionError("");
+
+              setGenerationError(
+                "Generation could not be restarted."
+              );
+
+              return;
+
+            } catch (retryError) {
+
+              if (!active) return;
+
+              console.error(
+                "Generation retry error:",
+                retryError
+              );
+
+              const detail =
+                retryError?.response?.data?.detail;
+
+              setJob(data);
+              setConnectionError("");
+
+              setGenerationError(
+                typeof detail === "string"
+                  ? detail
+                  : data.error_message ||
+                    "Unable to restart generation. Please refresh again."
+              );
+
+              return;
+            }
+          }
+
           setGenerationError(
             data.error_message ||
-            "Image generation failed."
+            "Image generation failed. Refresh the page to retry."
           );
+
           return;
         }
+
+        setGenerationError("");
 
         if (data.status === "completed") {
           const allReady = [
             "front",
             "left",
             "right",
-            "back",
           ].every(
             view => Boolean(data[`output_${view}_url`])
           );
@@ -210,10 +335,6 @@ export default function ResultsPage() {
       title: "Right View",
       image: job?.output_right_url,
     },
-    {
-      title: "Back View",
-      image: job?.output_back_url,
-    },
   ];
 
   const readyCount = previewImages.filter(
@@ -222,7 +343,7 @@ export default function ResultsPage() {
 
   const generationComplete =
     job?.status === "completed" &&
-    readyCount === 4 &&
+    readyCount === previewImages.length &&
     !generationError;
 
   const generationFailed =
@@ -686,7 +807,6 @@ export default function ResultsPage() {
           front,
           left,
           right,
-          back,
         ] =
           await Promise.all([
             imageUrlToDataUrl(
@@ -701,9 +821,6 @@ export default function ResultsPage() {
               job.output_right_url
             ),
 
-            imageUrlToDataUrl(
-              job.output_back_url
-            ),
           ]);
 
 
@@ -821,7 +938,7 @@ export default function ResultsPage() {
         addPdfImage(
           pdf,
           right,
-          28,
+          70,
           158,
           imageWidth,
           imageHeight,
@@ -829,15 +946,7 @@ export default function ResultsPage() {
         );
 
 
-        addPdfImage(
-          pdf,
-          back,
-          112,
-          158,
-          imageWidth,
-          imageHeight,
-          "Back View"
-        );
+
 
 
         pdf.addPage();
@@ -1157,7 +1266,7 @@ export default function ResultsPage() {
   .results-page .small-results-grid {
     display: grid !important;
     grid-template-columns:
-      repeat(4, minmax(0, 1fr)) !important;
+      repeat(3, minmax(0, 1fr)) !important;
     gap: 16px;
     align-items: stretch;
   }
@@ -1563,7 +1672,7 @@ export default function ResultsPage() {
     height: 6px !important;
   }
 
-  /* Four-image section */
+  /* Three-image section */
 
   .results-page .generated-results-section {
     padding: 18px !important;
@@ -1600,7 +1709,7 @@ export default function ResultsPage() {
 
     .results-page .small-results-grid {
       grid-template-columns:
-        repeat(4, minmax(0, 1fr)) !important;
+        repeat(3, minmax(0, 1fr)) !important;
     }
 
     .results-page .result-photo-stage {
@@ -1767,7 +1876,7 @@ export default function ResultsPage() {
     ? "Generation Interrupted"
     : generationComplete
       ? "Generation Complete"
-      : `Generating ${readyCount}/4`}
+      : `Generating ${readyCount}/${previewImages.length}`}
 </span>
 
         </div>
@@ -1814,7 +1923,7 @@ export default function ResultsPage() {
             </span>
 
             <span>
-              {readyCount}/4 Ready |
+              {readyCount}/{previewImages.length} Ready |
               {" "}{Math.round(progress)}%
             </span>
           </div>
@@ -1881,7 +1990,7 @@ export default function ResultsPage() {
 
 
               <div className="four-view-badge">
-  {readyCount}/4 Ready
+  {readyCount}/{previewImages.length} Ready
 </div>
 
             </div>
